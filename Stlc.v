@@ -12,27 +12,36 @@ Module STLC.
   Inductive stype : Type := (* security type/class *)
     | High : stype
     | Low : stype.
-  Inductive stype_leqi : stype -> stype -> Prop :=
+  Inductive stype_orderi : stype -> stype -> Prop :=
     | stype_eq : forall styp1 styp2,
-        stype_leqi styp1 styp2
+        stype_orderi styp1 styp2
     | stype_low_less : forall styp,
-        stype_leqi Low styp.
-  Definition stype_leq (s1 : stype) (s2 : stype) : bool :=
+        stype_orderi Low styp.
+  Definition stype_order (s1 : stype) (s2 : stype) : bool :=
     match s1, s2 with
     | Low, _ => true
     | High, High => true
     | _, _ => false
     end.
 
-  (** ** Terms *)
+  (** Terms *)
   Inductive term : Type :=
-    | read : nat -> dtype -> stype -> term
+    | read : string -> stype -> term
     | var : string -> term
     | app : term -> term -> term (* application of a term to a an abstraction *)
     | abs : string -> dtype -> term -> term (* abstraction ~= function *)
     | tru : term
     | fls : term
     | test : term -> term -> term -> term.
+
+  Inductive cmd : Type :=
+    | C_write : term -> string -> stype -> cmd
+    | C_seq : cmd -> cmd -> cmd
+    | C_if : term -> cmd -> cmd -> cmd
+    | C_skip : cmd.
+
+  Infix ";;" := C_seq (at level 80, right associativity).
+
 
   Open Scope string_scope.
   Definition x := "x".
@@ -74,20 +83,27 @@ Module STLC.
       | val_tru :
           value tru
       | val_fls :
-          value fls
-      | val_read : forall loc dtyp styp,
-          value (read loc dtyp styp).
+          value fls.
 
     Hint Constructors value.
 
+    Definition Hstate := partial_map term.
+    Definition Lstate := partial_map term.
 
+    (*
     (** ** Substitution *)
     Reserved Notation "'[' x ':=' s ']' t" (at level 20).
 
-    Fixpoint subst (x : string) (s : term) (t : term) : term :=
+    Fixpoint subst (Lst : Lstate) (Hst : Hstate) (x : string)
+                   (s : term) (t : term) : term :=
       match t with
-      | read loc dtyp styp =>
-          t
+      | read loc High => 
+          (match Hst loc with
+          | None =>  (* what? make it an optional? *)
+          | Some ter => subst Lst Hst x s ter
+          end)
+      | read loc Low => 
+          subst Lst Hst x s (Lst loc)
       | var x' =>
           if eqb_string x x' then s else t
       | abs x' dtyp t1 =>
@@ -103,43 +119,52 @@ Module STLC.
       end
 
       where "'[' x ':=' s ']' t" := (subst x s t).
+      *)
 
-
-    Inductive substi (x : string) (s : term) : term -> term -> Prop :=
-      | s_read :
-          forall loc dtyp styp,
-          substi x s (read loc dtyp styp) (read loc dtyp styp)
+    Inductive substi (Lst : Lstate) (Hst : Hstate) (x : string)
+      (s : term) : term -> term -> Prop :=
+      | s_read_H :
+          forall loc readterm readtermsub,
+          Hst loc = Some readterm ->
+          substi Lst Hst x s readterm readtermsub ->
+          substi Lst Hst x s (read loc High) readtermsub
+      | s_read_L :
+          forall loc readterm readtermsub,
+          Lst loc = Some readterm ->
+          substi Lst Hst x s readterm readtermsub ->
+          substi Lst Hst x s (read loc Low) readtermsub
       | s_var_eq :
-          substi x s (var x) s
+          substi Lst Hst x s (var x) s
       | s_var_neq :
           y <> x ->
-          substi x s (var y) (var y)
+          substi Lst Hst x s (var y) (var y)
       | s_abs_eq :
-          forall t1 T, substi x s (abs x T t1) (abs x T t1)
+          forall t1 T, substi Lst Hst x s (abs x T t1) (abs x T t1)
       | s_abs_neq :
           forall t1 t1' T,
           x <> y ->
-          substi x s t1 t1' ->
-          substi x s (abs y T t1) (abs y T t1')
+          substi Lst Hst x s t1 t1' ->
+          substi Lst Hst x s (abs y T t1) (abs y T t1')
       | s_app :
           forall t1 t1' t2 t2',
-          substi x s t1 t1' ->
-          substi x s t2 t2' ->
-          substi x s (app t1 t2) (app t1' t2')
+          substi Lst Hst x s t1 t1' ->
+          substi Lst Hst x s t2 t2' ->
+          substi Lst Hst x s (app t1 t2) (app t1' t2')
       | s_tru :
-          substi x s tru tru
+          substi Lst Hst x s tru tru
       | s_fls :
-          substi x s fls fls
+          substi Lst Hst x s fls fls
       | s_test :
           forall t1 t1' t2 t2' t3 t3',
-          substi x s t1 t1' ->
-          substi x s t2 t2' ->
-          substi x s t3 t3' ->
-          substi x s (test t1 t2 t3) (test t1' t2' t3')
+          substi Lst Hst x s t1 t1' ->
+          substi Lst Hst x s t2 t2' ->
+          substi Lst Hst x s t3 t3' ->
+          substi Lst Hst x s (test t1 t2 t3) (test t1' t2' t3')
     .
 
     Hint Constructors substi.
 
+    (*
     Theorem subst_substi_eq : forall x s t t',
       [x:=s]t = t' <-> substi x s t t'.
     Proof.
@@ -147,36 +172,77 @@ Module STLC.
       - induction t.
         + simpl in H.
     Admitted.
+    *)
 
 
     (* Smallstep Semantics *)
-    Reserved Notation "t1 '-->' t2" (at level 40).
+    Reserved Notation "L H '::' t1 '-->' t2" (at level 40).
 
-    Inductive step : term -> term -> Prop :=
-      | ST_AppAbs : forall x T t12 v2,
+    Inductive step_term (Lst : state) (Hst :state ) :
+      term -> term -> Prop :=
+      | ST_Read_H : forall loc readterm,
+          Hst loc = Some readterm ->
+          step_term Lst Hst (read loc High) readterm
+      | ST_Read_H : forall loc readterm,
+          Hst loc = Some readterm ->
+          step_term Lst Hst (read loc High) readterm
+      | ST_AppAbs : forall x T t12 v2 t12',
           value v2 ->
-          (app (abs x T t12) v2) --> [x:=v2]t12
+          substi Lst Hst x v2 t12 t12' ->
+          Lst Hst :: (app (abs x T t12) v2) --> t12'
       | ST_App1 : forall t1 t1' t2,
-          t1 --> t1' ->
-          app t1 t2 --> app t1' t2
+          Lst Hst :: t1 --> t1' ->
+          Lst Hst :: app t1 t2 --> app t1' t2
       | ST_App2 : forall v1 t2 t2',
           value v1 ->
-          t2 --> t2' ->
-          app v1 t2 --> app v1  t2'
+          Lst Hst :: t2 --> t2' ->
+          Lst Hst :: app v1 t2 --> app v1  t2'
       | ST_TestTru : forall t1 t2,
-          (test tru t1 t2) --> t1
+          Lst Hst :: (test tru t1 t2) --> t1
       | ST_TestFls : forall t1 t2,
-          (test fls t1 t2) --> t2
+          Lst Hst :: (test fls t1 t2) --> t2
       | ST_Test : forall t1 t1' t2 t3,
-          t1 --> t1' ->
-          (test t1 t2 t3) --> (test t1' t2 t3)
+          Lst Hst :: t1 --> t1' ->
+          Lst Hst :: (test t1 t2 t3) --> (test t1' t2 t3)
 
-          where "t1 '-->' t2" := (step t1 t2).
+          where "L H '::' t1 '-->' t2" := (step_term Lst Hst t1 t2).
 
-    Hint Constructors step.
+    Hint Constructors step_term.
 
-    Notation multistep := (multi step).
-    Notation "t1 '-->*' t2" := (multistep t1 t2) (at level 40).
+    Notation multistepterm := (multi step_term).
+    Notation "t1 '-->*' t2" := (multistepterm t1 t2) (at level 40).
+
+    
+    Inductive step_cmd : state * cmd -> state * cmd -> Prop :=
+      | ST_C_write : forall st vstr loc dt st,
+          step_cmd (C_write loc dt st)
+                   ((loc |-> dt ; st), C_skip)
+
+      | ST_C_seq_step : forall st st' c1 c1' c2,
+          step_cmd (st, c1) (st', c1') ->
+          step_cmd (st, (c1 ;; c2)) (st', (c1' ;; c2))
+
+      | ST_C_seq_skip : forall state c2,
+          step_cmd (state, (C_skip ;; c2))
+                   (state, c2)
+(*
+      | ST_C_seq_2 : forall c1 c2,
+          (~exists c1' step_cmd c1 c1') ->
+          step_cmd (c1 ;; c2) c2 *)
+
+      | ST_C_if_tru : forall state b1 b2,
+          step_cmd (state, (C_if tru b1 b2))
+                   (state, b1)
+
+      | ST_C_if_fls : forall state b1 b2,
+          step_cmd (state, (C_if fls b1 b2))
+                   (state, b2)
+
+      | ST_C_if_cond : forall state cond cond' b1 b2,
+          step_term cond cond' ->
+          step_cmd (state, (C_if cond b1 b2))
+                   (state, (C_if cond' b1 b2))
+    .
 
 
     (** * Typing *)
