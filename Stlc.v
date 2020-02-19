@@ -6,18 +6,33 @@ From STLCIF Require Import Smallstep.
 
 Module STLC.
   (** ** Types *)
-  Inductive ty : Type :=
-    | Bool  : ty
-    | Arrow : ty -> ty -> ty.
+  Inductive dtype : Type := (* data type *)
+    | Bool  : dtype
+    | Arrow : dtype -> dtype -> dtype.
+  Inductive stype : Type := (* security type/class *)
+    | High : stype
+    | Low : stype.
+  Inductive stype_leqi : stype -> stype -> Prop :=
+    | stype_eq : forall styp1 styp2,
+        stype_leqi styp1 styp2
+    | stype_low_less : forall styp,
+        stype_leqi Low styp.
+  Definition stype_leq (s1 : stype) (s2 : stype) : bool :=
+    match s1, s2 with
+    | Low, _ => true
+    | High, High => true
+    | _, _ => false
+    end.
 
   (** ** Terms *)
-  Inductive tm : Type :=
-    | var : string -> tm
-    | app : tm -> tm -> tm (* application of a term to a an abstraction *)
-    | abs : string -> ty -> tm -> tm (* abstraction ~= function *)
-    | tru : tm
-    | fls : tm
-    | test : tm -> tm -> tm -> tm.
+  Inductive term : Type :=
+    | read : nat -> dtype -> stype -> term
+    | var : string -> term
+    | app : term -> term -> term (* application of a term to a an abstraction *)
+    | abs : string -> dtype -> term -> term (* abstraction ~= function *)
+    | tru : term
+    | fls : term
+    | test : term -> term -> term -> term.
 
   Open Scope string_scope.
   Definition x := "x".
@@ -28,8 +43,8 @@ Module STLC.
   Hint Unfold z.
 
 
-  (** (We write these as [Notation]s rather than [Definition]s to
-    make things easier for [auto].) *)
+  (** We write these as [Notation]s rather than [Definition]s to
+    make things easier for [auto]. *)
     (** [idB = \x:Bool. x] *)
     Notation idB :=
       (abs x Bool (var x)).
@@ -53,13 +68,15 @@ Module STLC.
 
     (** * Operational Semantics *)
     (** ** Values *)
-    Inductive value : tm -> Prop :=
-      | v_abs : forall x T t,
+    Inductive value : term -> Prop :=
+      | val_abs : forall x T t,
           value (abs x T t)
-      | v_tru :
+      | val_tru :
           value tru
-      | v_fls :
-          value fls.
+      | val_fls :
+          value fls
+      | val_read : forall loc dtyp styp,
+          value (read loc dtyp styp).
 
     Hint Constructors value.
 
@@ -67,12 +84,14 @@ Module STLC.
     (** ** Substitution *)
     Reserved Notation "'[' x ':=' s ']' t" (at level 20).
 
-    Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
+    Fixpoint subst (x : string) (s : term) (t : term) : term :=
       match t with
+      | read loc dtyp styp =>
+          t
       | var x' =>
           if eqb_string x x' then s else t
-      | abs x' T t1 =>
-          abs x' T (if eqb_string x x' then t1 else ([x:=s] t1))
+      | abs x' dtyp t1 =>
+          abs x' dtyp (if eqb_string x x' then t1 else ([x:=s] t1))
       | app t1 t2 =>
           app ([x:=s] t1) ([x:=s] t2)
       | tru =>
@@ -86,7 +105,10 @@ Module STLC.
       where "'[' x ':=' s ']' t" := (subst x s t).
 
 
-    Inductive substi (x : string) (s : tm) : tm -> tm -> Prop :=
+    Inductive substi (x : string) (s : term) : term -> term -> Prop :=
+      | s_read :
+          forall loc dtyp styp,
+          substi x s (read loc dtyp styp) (read loc dtyp styp)
       | s_var_eq :
           substi x s (var x) s
       | s_var_neq :
@@ -123,15 +145,14 @@ Module STLC.
     Proof.
       intros. split; intros H.
       - induction t.
-        + simpl in H. destruct (eqb_string x0 s0) eqn:E.
-          * subst. apply eqb_string_true_iff in E. subst. apply s_var_eq.
+        + simpl in H.
     Admitted.
 
 
     (* Smallstep Semantics *)
     Reserved Notation "t1 '-->' t2" (at level 40).
 
-    Inductive step : tm -> tm -> Prop :=
+    Inductive step : term -> term -> Prop :=
       | ST_AppAbs : forall x T t12 v2,
           value v2 ->
           (app (abs x T t12) v2) --> [x:=v2]t12
