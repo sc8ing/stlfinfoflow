@@ -176,73 +176,74 @@ Module STLC.
 
 
     (* Smallstep Semantics *)
-    Reserved Notation "L H '::' t1 '-->' t2" (at level 40).
+(*    Reserved Notation "L H '::' t1 '-->' t2" (at level 40). *)
 
-    Inductive step_term (Lst : state) (Hst :state ) :
+    Inductive step_term (Lst : Lstate) (Hst : Hstate) :
       term -> term -> Prop :=
       | ST_Read_H : forall loc readterm,
           Hst loc = Some readterm ->
           step_term Lst Hst (read loc High) readterm
-      | ST_Read_H : forall loc readterm,
-          Hst loc = Some readterm ->
-          step_term Lst Hst (read loc High) readterm
+      | ST_Read_L : forall loc readterm,
+          Lst loc = Some readterm ->
+          step_term Lst Hst (read loc Low) readterm
       | ST_AppAbs : forall x T t12 v2 t12',
           value v2 ->
           substi Lst Hst x v2 t12 t12' ->
-          Lst Hst :: (app (abs x T t12) v2) --> t12'
+          step_term Lst Hst (app (abs x T t12) v2) t12'
       | ST_App1 : forall t1 t1' t2,
-          Lst Hst :: t1 --> t1' ->
-          Lst Hst :: app t1 t2 --> app t1' t2
+          step_term Lst Hst t1 t1' ->
+          step_term Lst Hst (app t1 t2) (app t1' t2)
       | ST_App2 : forall v1 t2 t2',
           value v1 ->
-          Lst Hst :: t2 --> t2' ->
-          Lst Hst :: app v1 t2 --> app v1  t2'
+          step_term Lst Hst t2 t2' ->
+          step_term Lst Hst (app v1 t2) (app v1  t2')
       | ST_TestTru : forall t1 t2,
-          Lst Hst :: (test tru t1 t2) --> t1
+          step_term Lst Hst (test tru t1 t2) t1
       | ST_TestFls : forall t1 t2,
-          Lst Hst :: (test fls t1 t2) --> t2
+          step_term Lst Hst (test fls t1 t2) t2
       | ST_Test : forall t1 t1' t2 t3,
-          Lst Hst :: t1 --> t1' ->
-          Lst Hst :: (test t1 t2 t3) --> (test t1' t2 t3)
+          step_term Lst Hst t1 t1' ->
+          step_term Lst Hst (test t1 t2 t3) (test t1' t2 t3).
 
-          where "L H '::' t1 '-->' t2" := (step_term Lst Hst t1 t2).
+(*          where "L H '::' t1 '-->' t2" := (step_term Lst Hst t1 t2). *)
 
     Hint Constructors step_term.
 
     Notation multistepterm := (multi step_term).
-    Notation "t1 '-->*' t2" := (multistepterm t1 t2) (at level 40).
+    Notation "L H t1 '-->*' t2" := (multistepterm L H t1 t2) (at level 40).
 
     
-    Inductive step_cmd : state * cmd -> state * cmd -> Prop :=
-      | ST_C_write : forall st vstr loc dt st,
-          step_cmd (C_write loc dt st)
-                   ((loc |-> dt ; st), C_skip)
+    Reserved Notation "'[[' L '|' H ']]' t1 '-->' '[[' L2 '|' H2 ']]' t2" (at level 40).
+    Inductive step_cmd : Lstate * Hstate * cmd ->
+                         Lstate * Hstate * cmd -> Prop :=
+      | ST_C_write_L : forall L H data loc,
+          [[ L | H ]] (C_write data loc Low)
+          --> [[ (loc |-> data ; L) | H ]] C_skip
 
-      | ST_C_seq_step : forall st st' c1 c1' c2,
-          step_cmd (st, c1) (st', c1') ->
-          step_cmd (st, (c1 ;; c2)) (st', (c1' ;; c2))
+      | ST_C_write_H : forall L H data loc,
+          [[ L | H ]] (C_write data loc High)
+          --> [[ L | (loc |-> data ; H) ]] C_skip
 
-      | ST_C_seq_skip : forall state c2,
-          step_cmd (state, (C_skip ;; c2))
-                   (state, c2)
-(*
-      | ST_C_seq_2 : forall c1 c2,
-          (~exists c1' step_cmd c1 c1') ->
-          step_cmd (c1 ;; c2) c2 *)
+      | ST_C_seq_step : forall L H L2 H2 c1 c1' c2,
+          [[ L | H ]] c1 --> [[ L2 | H2 ]] c1' ->
+          [[ L | H ]] (c1 ;; c2) --> [[ L2 | H2 ]] (c1' ;; c2)
 
-      | ST_C_if_tru : forall state b1 b2,
-          step_cmd (state, (C_if tru b1 b2))
-                   (state, b1)
+      | ST_C_seq_skip : forall L H c2,
+          [[ L | H ]] (C_skip ;; c2) --> [[ L | H ]] c2
 
-      | ST_C_if_fls : forall state b1 b2,
-          step_cmd (state, (C_if fls b1 b2))
-                   (state, b2)
+      | ST_C_if_tru : forall L H b1 b2,
+          [[ L | H ]](C_if tru b1 b2) --> [[ L | H ]]b1
 
+      | ST_C_if_fls : forall L H b1 b2,
+          [[ L | H ]] (C_if fls b1 b2) --> [[ L | H ]] b2
+
+          (*
       | ST_C_if_cond : forall state cond cond' b1 b2,
           step_term cond cond' ->
           step_cmd (state, (C_if cond b1 b2))
-                   (state, (C_if cond' b1 b2))
-    .
+                   (state, (C_if cond' b1 b2))*)
+    
+      where "'[[' L '|' H ']]' c1 '-->' '[[' L2 '|' H2 ']]' c2" := (step_cmd (L, H, c1) (L2, H2, c2)). 
 
 
     (** * Typing *)
