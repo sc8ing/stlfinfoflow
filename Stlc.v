@@ -5,13 +5,16 @@ From STLCIF Require Import Maps.
 From STLCIF Require Import Smallstep.
 
 Module STLC.
-  (** ** Types *)
   Inductive dtype : Type := (* data type *)
     | Bool  : dtype
     | Arrow : dtype -> dtype -> dtype.
+
+
   Inductive stype : Type := (* security type/class *)
     | High : stype
     | Low : stype.
+
+
   Reserved Notation "s '_<=' S" (at level 100).
   Inductive stype_orderi : stype -> stype -> Prop :=
     | stype_eq : forall s,
@@ -19,6 +22,8 @@ Module STLC.
     | stype_low_less : forall s,
         Low _<= s
   where "s '_<=' S" := (stype_orderi s S).
+
+
   Definition stype_order (s1 : stype) (s2 : stype) : bool :=
     match s1, s2 with
     | Low, _ => true
@@ -26,23 +31,31 @@ Module STLC.
     | _, _ => false
     end.
 
-  (** Terms *)
-  Inductive term : Type :=
-    | read : string -> stype -> term
-    | var : string -> term
-    | app : term -> term -> term (* application of a term to a an abstraction *)
-    | abs : string -> dtype -> term -> term (* abstraction ~= function *)
-    | tru : term
-    | fls : term
-    | test : term -> term -> term -> term.
 
-  Inductive cmd : Type :=
-    | C_write : term -> string -> stype -> cmd
-    | C_seq : cmd -> cmd -> cmd
-    | C_if : term -> cmd -> cmd -> cmd
-    | C_skip : cmd.
+  Inductive exp : Type :=
+    (* read [location] from [security class] *)
+    | read : string -> stype -> exp
 
-  Infix ";;" := C_seq (at level 80, right associativity).
+    (* write [val] to [location] in [security class] *)
+    | write : exp -> string -> stype -> exp
+
+    (* a lambda calculus binding *)
+    | var : string -> exp 
+
+    (* [abstraction] [arg] *)
+    | app : exp -> exp -> exp 
+
+    (* abstraction ~= function *)
+    | abs : string -> dtype -> exp -> exp 
+
+    | tru : exp
+    | fls : exp
+
+    | seq : cmd -> cmd -> cmd
+    | if : exp -> cmd -> cmd -> cmd
+    | skip : cmd.
+
+  Infix ";;" := seq (at level 80, right associativity).
 
 
   Open Scope string_scope.
@@ -125,6 +138,7 @@ Module STLC.
 
     Inductive substi (Lst : Lstate) (Hst : Hstate) (x : string)
       (s : term) : term -> term -> Prop :=
+      (* sub in for the arguments of the read command (except High low) *)
       | s_read_H :
           forall loc readterm readtermsub,
           Hst loc = Some readterm ->
@@ -230,7 +244,7 @@ Module STLC.
           [[ L | H ]] (C_skip ;; c2) --> [[ L | H ]] c2
 
       | ST_C_if_tru : forall L H b1 b2,
-          [[ L | H ]](C_if tru b1 b2) --> [[ L | H ]]b1
+          [[ L | H ]] (C_if tru b1 b2) --> [[ L | H ]]b1
 
       | ST_C_if_fls : forall L H b1 b2,
           [[ L | H ]] (C_if fls b1 b2) --> [[ L | H ]] b2
