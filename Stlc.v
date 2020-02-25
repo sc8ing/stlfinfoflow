@@ -222,18 +222,6 @@ Module STLC.
     Notation "'[[' L '|' H ']]' e1 '-->*' e2 '[[' L2 '|' H2 ']]'" := (multistep (L, H, e1) (L2, H2, e2)) (at level 40).
 
 
-      (* no H that affects L' *)
-      (* i.e. no 2 Hs that result in different L' L2' *)
-      (* i.e. H|L->H'|L' /\ H2|L->H2'|L2' -> L'=L2' *)
-      Definition non_interference :=
-        forall L H L' H' H2 H2' L2' p p' p'',
-        value p' ->
-        value p'' ->
-        [[ H | L ]] p -->*  p' [[ H' | L' ]] /\
-            [[ H2 | L ]] p -->* p'' [[ H2' | L2' ]] ->
-        L' = L2'.
-
-
 
       Definition dtype_context := partial_map dtype.
 
@@ -329,8 +317,9 @@ Module STLC.
             gam |- (app (abs x T func) arg) \c: propSC
 
         | SC_abs :
-            forall gam x T func st,
-            gam |- (abs x T func) \c: st
+            forall gam x xSC T func funcSC,
+            (x |-> xSC ; gam) |- func \c: funcSC ->
+            gam |- (abs x T func) \c: funcSC
 
         | SC_tru : forall gam st, gam |- tru \c: st
         | SC_fls : forall gam st, gam |- fls \c: st
@@ -370,12 +359,12 @@ Module STLC.
             forall gam e eSC loc (writesc : stype) (propsc : stype),
             gam |- e \v: eSC ->
             (eSC _<= propsc) ->
-            gam |- (write e loc writesc) \c: propsc
+            gam |- (write e loc writesc) \v: propsc
 
         | SV_var :
-            forall gam x st,
-            gam x = Some xst,
-            gam |- var x \c: xst
+            forall gam x xst,
+            gam x = Some xst ->
+            gam |- (var x) \v: xst
 
         | SV_app :
             forall gam x T func arg argSC subresult subresSC propSC,
@@ -386,8 +375,9 @@ Module STLC.
             gam |- (app (abs x T func) arg) \v: propSC
 
         | SV_abs :
-            forall gam x T func st,
-            gam |- (abs x T func) \v: st (* *)
+            forall gam x xSC T func funcSC,
+            (x |-> xSC ; gam) |- func \v: funcSC ->
+            gam |- (abs x T func) \v: st
 
         | SV_tru : forall gam st, gam |- tru \v: st
         | SV_fls : forall gam st, gam |- fls \v: st
@@ -410,7 +400,34 @@ Module STLC.
             forall gam st,
             gam |- skip \v: st
 
-        where "gam '|-' e '\c:' ST" := (scmd_type gam e ST).
+        where "gam '|-' e '\v:' ST" := (svar_type gam e ST).
 
+
+      (* Begin soundness proof *)
+
+      (* no H that affects L' *)
+      (* i.e. no 2 Hs that result in different L' L2' *)
+      (* i.e. H|L->H'|L' /\ H2|L->H2'|L2' -> L'=L2' *)
+      Theorem non_interference : forall L H L' H' H2 H2' L2' p p' p'',
+        value p' ->
+        value p'' ->
+        [[ H | L ]] p -->*  p' [[ H' | L' ]] /\
+            [[ H2 | L ]] p -->* p'' [[ H2' | L2' ]] ->
+        L' = L2'.
+      Proof.
+      Admitted.
+
+      (* how to say "forall (read loc)s in e"? 
+      Lemma simple_security : forall e evSC readSC,
+        gam |- e \v: evSC ->
+        (* if (read loc readSC) appears in e, readSC <= evSC *)
+        (* need to take care of lambda variables too? *)
+        *)
+
+      (*
+      Lemma confinement : forall e ecSC writeSC,
+        gam |- e \c: ecSC,
+        (* if (write data loc writeSC) appears in e, writeSC >= ecSC *)
+      *)
 
     End STLC.
