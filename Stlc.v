@@ -235,65 +235,81 @@ Module STLC.
 
 
 
-      (** * Typing *)
       Definition dtype_context := partial_map dtype.
 
-      (** ** Typing Relation *)
 
-      Reserved Notation "Gamma '|-' t '\in' T" (at level 40).
+      Reserved Notation "'[[' L '|' H ']]' Gamma '|-' t '\in' T" (at level 40).
 
-      Inductive has_dtype : dtype_context -> exp -> dtype -> Prop :=
-(*        | T_read :
-            forall Gamma loc styp e T,
-            env loc = Some e ->
-            Gamma |- e \in T ->
-            Gamma |- (read loc styp) \in T *)
-                (* pass in states, make separate copy without *)
+      (* Lstate and Hstates aren't really "states" so much as like
+         maps that would be formed in static analyses of let [binding] in...
+         blocks with variables ("read" expression functions as a variable) *)
+      Inductive has_dtype : Lstate -> Hstate -> dtype_context -> exp -> dtype -> Prop :=
+        | T_read_L :
+            forall L H Gamma loc (styp : stype) e T,
+            L loc = Some e ->
+            [[L|H]] Gamma |- e \in T ->
+            [[L|H]] Gamma |- (read loc Low) \in T 
 
+        | T_read_H :
+            forall L H Gamma loc (styp : stype) e T,
+            H loc = Some e ->
+            [[L|H]] Gamma |- e \in T ->
+            [[L|H]] Gamma |- (read loc High) \in T 
         | T_write :
-            forall e loc styp,
-            Gamma |- (write e loc styp) \in Unit
+            forall L H Gamma e loc styp,
+            [[L|H]] Gamma |- (write e loc styp) \in Unit
 
-        | T_var : forall Gamma x T,
+        | T_var :
+            forall L H Gamma x T,
             Gamma x = Some T ->
-            Gamma |- var x \in T
+            [[L|H]] Gamma |- (var x) \in T
 
         | T_app :
-            forall T11 T12 Gamma t1 t2,
-            Gamma |- t1 \in Arrow T11 T12 ->
-            Gamma |- t2 \in T11 ->
-            Gamma |- app t1 t2 \in T12
+            forall L H T11 T12 Gamma t1 t2,
+            [[L|H]] Gamma |- t1 \in Arrow T11 T12 ->
+            [[L|H]] Gamma |- t2 \in T11 ->
+            [[L|H]] Gamma |- (app t1 t2) \in T12
 
         | T_abs :
-            forall Gamma x T11 T12 t12,
-            (x |-> T11 ; Gamma) |- t12 \in T12 ->
-            Gamma |- abs x T11 t12 \in Arrow T11 T12
+            forall L H Gamma x T11 T12 t12,
+            [[L|H]] (x |-> T11 ; Gamma) |- t12 \in T12 ->
+            [[L|H]] Gamma |- (abs x T11 t12) \in Arrow T11 T12
 
         | T_tru :
-            forall Gamma,
-            Gamma |- tru \in Bool
+            forall L H Gamma,
+            [[L|H]] Gamma |- tru \in Bool
 
         | T_fls :
-            forall Gamma,
-            Gamma |- fls \in Bool
+            forall L H Gamma,
+            [[L|H]] Gamma |- fls \in Bool
 
         | T_seq :
-            forall e1 e2,
-            Gamma |- (e1 ;; e2) \in Unit
+            forall L H Gamma e1 e2,
+            [[L|H]] Gamma |- (e1 ;; e2) \in Unit
 
         | T_test :
-            forall cond b1 b2 T Gamma,
-            Gamma |- cond \in Bool ->
-            Gamma |- b1 \in T ->
-            Gamma |- b2 \in T ->
-            Gamma |- test cond b1 b2 \in T
+            forall L H cond b1 b2 T Gamma,
+            [[L|H]] Gamma |- cond \in Bool ->
+            [[L|H]] Gamma |- b1 \in T ->
+            [[L|H]] Gamma |- b2 \in T ->
+            [[L|H]] Gamma |- test cond b1 b2 \in T
 
         | T_skip :
-            Gamma |- skip \in Unit
+            forall L H Gamma,
+            [[L|H]] Gamma |- skip \in Unit
 
-        where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
+        where "'[[' L '|' H ']]' Gamma '|-' t '\in' T" := (has_dtype L H Gamma t T).
 
       Hint Constructors has_dtype.
+
+
+      Reserved Notation "gam '|-' c '\c:' ST" (at level 40).
+      Inductive scmd_type : cmd -> stype -> Prop :=
+        | SC_skip :
+            forall gam st,
+            gam |- c \c: st
+
+        where "gam '|-' c '\:' ST" := (scmd_type gam c ST).
 
 
       Definition stype_context := partial_map stype.
