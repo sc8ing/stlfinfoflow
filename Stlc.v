@@ -255,6 +255,7 @@ Module STLC.
             H loc = Some e ->
             [[L|H]] Gamma |- e \in T ->
             [[L|H]] Gamma |- (read loc High) \in T 
+
         | T_write :
             forall L H Gamma e loc styp,
             [[L|H]] Gamma |- (write e loc styp) \in Unit
@@ -285,6 +286,7 @@ Module STLC.
 
         | T_seq :
             forall L H Gamma e1 e2,
+            (* what about the Gamma' that e1 can create? *)
             [[L|H]] Gamma |- (e1 ;; e2) \in Unit
 
         | T_test :
@@ -303,36 +305,58 @@ Module STLC.
       Hint Constructors has_dtype.
 
 
-      Reserved Notation "gam '|-' c '\c:' ST" (at level 40).
-      Inductive scmd_type : cmd -> stype -> Prop :=
+      Reserved Notation "gam '|-' e '\c:' ST" (at level 40).
+      Inductive scmd_type : bool -> exp -> stype -> Prop :=
+        | SC_read :
+            forall gam loc readst propSC,
+            gam |- (read loc readst) \c: propSC
+
+        | SC_write :
+            forall gam e loc (writesc : stype) (propsc : stype),
+            (propsc _<= writesc) ->
+            gam |- (write e loc writesc) \c: propsc
+
+        | SC_var :
+            forall gam x st,
+            gam |- var x \c: st
+
+        | SC_app :
+            (* gam |- arg \c: argSC -> *) (* and gives gam'? *)
+            (* depends on whether T_seq rule allows non units types *)
+            forall gam x T func arg subresult (argSC:stype) propSC,
+            substi x arg (abs x T func) subresult ->
+            gam |- subresult \c: propSC ->
+            gam |- (app (abs x T func) arg) \c: propSC
+
+        | SC_abs :
+            forall gam x T func st,
+            gam |- (abs x T func) \c: st
+
+        | SC_tru : forall gam st, gam |- tru \c: st
+        | SC_fls : forall gam st, gam |- fls \c: st
+
+        | SC_seq :
+            forall gam e1 e1st e2 e2st propSC,
+            gam |- e1 \c: e1st ->
+            gam |- e2 \c: e2st ->
+            (e1st _<= propSC) -> (e2st _<= propSC) ->
+            gam |- e1;;e2 \c: propSC
+
+        | SC_test :
+            forall gam cond b1 b1st b2 b2st propSC,
+            gam |- b1 \c: b1st ->
+            gam |- b2 \c: b2st ->
+            (* testing of condition depends on ST_seq *)
+            (b1st _<= propSC) -> (b2st _<= propSC) ->
+            gam |- (test cond b1 b2) \c: propSC
+
         | SC_skip :
             forall gam st,
-            gam |- c \c: st
+            gam |- skip \c: st
 
-        where "gam '|-' c '\:' ST" := (scmd_type gam c ST).
+        where "gam '|-' e '\c:' ST" := (scmd_type gam e ST).
 
 
       Definition stype_context := partial_map stype.
-
-      Reserved Notation "gam '|-' p '\:' ST" (at level 40).
-      Inductive has_stype : stype_context -> cmd -> stype -> Prop :=
-        | S_skip : forall gam st,
-            gam |- C_skip \: st
-
-        | S_write : forall gam data dataSC loc writeSC propSC,
-            dataSC _<= writeSC ->
-            writeSC _<= propSC ->
-            gam |- (C_write data loc writeSC) \: propSC
-
-        | S_seq : forall gam c1 c2 c1SC c2SC propSC,
-            propSC _<= c1SC /\ propSC _<= c2SC ->
-            gam |- (c1 ;; c2) \: propSC
-
-                (*
-        | S_if : forall gam cond b1 b2 condSC b1SC b2SC propSC,
-            b1SC _<= condSC /\ b2SC _<= condSC,
-    *)
-
-      where "gam '|-' p '\:' ST" := (has_stype gam p ST).
 
     End STLC.
