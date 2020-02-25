@@ -7,7 +7,8 @@ From STLCIF Require Import Smallstep.
 Module STLC.
   Inductive dtype : Type := (* data type *)
     | Bool  : dtype
-    | Arrow : dtype -> dtype -> dtype.
+    | Arrow : dtype -> dtype -> dtype
+    | Unit : dtype.
 
 
   Inductive stype : Type := (* security type/class *)
@@ -215,47 +216,10 @@ Module STLC.
         [[L|H]] (test cond b1 b2) --> (test cond' b1 b2) [[L'|H']]
     where "'[[' L '|' H ']]' e1 '-->' e2 '[[' L2 '|' H2 ']]'" := (step (L, H, e1) (L2, H2, e1)).
 
-      Hint Constructors step_term.
+    Hint Constructors step.
 
-      Notation multistepterm := (multi step_term).
-      Notation "L H t1 '-->*' t2" := (multistepterm L H t1 t2) (at level 40).
-
-
-      Reserved Notation "'[[' L '|' H ']]' e1 '-->' e2 '[[' L2 '|' H2 ']]'" (at level 40).
-      Inductive step_cmd : Lstate * Hstate * cmd ->
-        Lstate * Hstate * cmd -> Prop :=
-    | ST_C_write_L : forall L H data loc,
-        [[ L | H ]] (C_write data loc Low)
-        --> [[ (loc |-> data ; L) | H ]] C_skip
-
-    | ST_C_write_H : forall L H data loc,
-        [[ L | H ]] (C_write data loc High)
-        --> [[ L | (loc |-> data ; H) ]] C_skip
-
-    | ST_C_seq_step : forall L H L2 H2 c1 c1' c2,
-        [[ L | H ]] c1 --> [[ L2 | H2 ]] c1' ->
-            [[ L | H ]] (c1 ;; c2) --> [[ L2 | H2 ]] (c1' ;; c2)
-
-    | ST_C_seq_skip : forall L H c2,
-        [[ L | H ]] (C_skip ;; c2) --> [[ L | H ]] c2
-
-    | ST_C_if_tru : forall L H b1 b2,
-        [[ L | H ]] (C_if tru b1 b2) --> [[ L | H ]]b1
-
-    | ST_C_if_fls : forall L H b1 b2,
-        [[ L | H ]] (C_if fls b1 b2) --> [[ L | H ]] b2
-
-    | ST_C_if_cond : forall L H cond cond' b1 b2,
-        step_term L H cond cond' ->
-        [[ L | H ]] (C_if cond b1 b2)
-        --> [[ L | H ]] (C_if cond' b1 b2)
-
-           where "'[[' L '|' H ']]' c1 '-->' '[[' L2 '|' H2 ']]' c2" := (step_cmd (L, H, c1) (L2, H2, c2)). 
-
-      Notation multistepcmd := (multi step_cmd).
-      Notation "'[[' L '|' H ']]' c1 '-->*' '[[' L2 '|' H2 ']]' c2" :=
-          (multistepcmd (L, H, c1) (L2, H2, c2)) (at level 40).
-
+    Notation multistep:= (multi step).
+    Notation "'[[' L '|' H ']]' e1 '-->*' e2 '[[' L2 '|' H2 ']]'" := (multistep (L, H, e1) (L2, H2, e2)) (at level 40).
 
 
       (* no H that affects L' *)
@@ -263,9 +227,11 @@ Module STLC.
       (* i.e. H|L->H'|L' /\ H2|L->H2'|L2' -> L'=L2' *)
       Definition non_interference :=
         forall L H L' H' H2 H2' L2' p p' p'',
-        [[ H | L ]] p -->* [[ H' | L' ]] p' /\
-            [[ H2 | L ]] p -->* [[ H2' | L2' ]] p'' ->
-                L' = L2'.
+        value p' ->
+        value p'' ->
+        [[ H | L ]] p -->*  p' [[ H' | L' ]] /\
+            [[ H2 | L ]] p -->* p'' [[ H2' | L2' ]] ->
+        L' = L2'.
 
 
 
@@ -276,28 +242,56 @@ Module STLC.
 
       Reserved Notation "Gamma '|-' t '\in' T" (at level 40).
 
-      Inductive has_dtype : dtype_context -> term -> dtype -> Prop :=
-        | T_Var : forall Gamma x T,
+      Inductive has_dtype : dtype_context -> exp -> dtype -> Prop :=
+(*        | T_read :
+            forall Gamma loc styp e T,
+            env loc = Some e ->
+            Gamma |- e \in T ->
+            Gamma |- (read loc styp) \in T *)
+                (* pass in states, make separate copy without *)
+
+        | T_write :
+            forall e loc styp,
+            Gamma |- (write e loc styp) \in Unit
+
+        | T_var : forall Gamma x T,
             Gamma x = Some T ->
             Gamma |- var x \in T
-        | T_Abs : forall Gamma x T11 T12 t12,
-            (x |-> T11 ; Gamma) |- t12 \in T12 ->
-                Gamma |- abs x T11 t12 \in Arrow T11 T12
-        | T_App : forall T11 T12 Gamma t1 t2,
-            Gamma |- t1 \in Arrow T11 T12 ->
-                Gamma |- t2 \in T11 ->
-                    Gamma |- app t1 t2 \in T12
-        | T_Tru : forall Gamma,
-            Gamma |- tru \in Bool
-        | T_Fls : forall Gamma,
-            Gamma |- fls \in Bool
-        | T_Test : forall t1 t2 t3 T Gamma,
-            Gamma |- t1 \in Bool ->
-                Gamma |- t2 \in T ->
-                    Gamma |- t3 \in T ->
-                        Gamma |- test t1 t2 t3 \in T
 
-                            where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
+        | T_app :
+            forall T11 T12 Gamma t1 t2,
+            Gamma |- t1 \in Arrow T11 T12 ->
+            Gamma |- t2 \in T11 ->
+            Gamma |- app t1 t2 \in T12
+
+        | T_abs :
+            forall Gamma x T11 T12 t12,
+            (x |-> T11 ; Gamma) |- t12 \in T12 ->
+            Gamma |- abs x T11 t12 \in Arrow T11 T12
+
+        | T_tru :
+            forall Gamma,
+            Gamma |- tru \in Bool
+
+        | T_fls :
+            forall Gamma,
+            Gamma |- fls \in Bool
+
+        | T_seq :
+            forall e1 e2,
+            Gamma |- (e1 ;; e2) \in Unit
+
+        | T_test :
+            forall cond b1 b2 T Gamma,
+            Gamma |- cond \in Bool ->
+            Gamma |- b1 \in T ->
+            Gamma |- b2 \in T ->
+            Gamma |- test cond b1 b2 \in T
+
+        | T_skip :
+            Gamma |- skip \in Unit
+
+        where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
 
       Hint Constructors has_dtype.
 
