@@ -339,7 +339,7 @@ Module STLC.
             forall gam e1 e1st e2 e2st propSC,
             gam |- e1 \c: e1st ->
             gam |- e2 \c: e2st ->
-            (e1st _<= propSC) -> (e2st _<= propSC) ->
+            (propSC _<= e1st) -> (propSC _<= e2st) ->
             gam |- e1;;e2 \c: propSC
 
         | SC_test :
@@ -347,7 +347,7 @@ Module STLC.
             gam |- b1 \c: b1st ->
             gam |- b2 \c: b2st ->
             (* testing of condition depends on ST_seq *)
-            (b1st _<= propSC) -> (b2st _<= propSC) ->
+            (propSC _<= b1st) -> (propSC _<= b2st) ->
             gam |- (test cond b1 b2) \c: propSC
 
         | SC_skip :
@@ -358,5 +358,59 @@ Module STLC.
 
 
       Definition stype_context := partial_map stype.
+
+      Reserved Notation "gam '|-' e '\v:' ST" (at level 40).
+      Inductive svar_type : stype_context -> exp -> stype -> Prop :=
+        | SV_read :
+            forall gam loc readst propSC,
+            (readst _<= propSC) ->
+            gam |- (read loc readst) \v: propSC
+
+        | SV_write :
+            forall gam e eSC loc (writesc : stype) (propsc : stype),
+            gam |- e \v: eSC ->
+            (eSC _<= propsc) ->
+            gam |- (write e loc writesc) \c: propsc
+
+        | SV_var :
+            forall gam x st,
+            gam x = Some xst,
+            gam |- var x \c: xst
+
+        | SV_app :
+            forall gam x T func arg argSC subresult subresSC propSC,
+            gam |- arg \v: argSC ->
+            substi x arg (abs x T func) subresult ->
+            gam |- subresult \v: subresSC ->
+            (argSC _<= propSC) -> (subresSC _<= propSC) ->
+            gam |- (app (abs x T func) arg) \v: propSC
+
+        | SV_abs :
+            forall gam x T func st,
+            gam |- (abs x T func) \v: st (* *)
+
+        | SV_tru : forall gam st, gam |- tru \v: st
+        | SV_fls : forall gam st, gam |- fls \v: st
+
+        | SV_seq :
+            forall gam e1 e1st e2 e2st propSC,
+            gam |- e1 \v: e1st ->
+            gam |- e2 \v: e2st ->
+            (e1st _<= propSC) -> (e2st _<= propSC) ->
+            gam |- e1;;e2 \v: propSC
+
+        | SV_test :
+            forall gam cond b1 b1st b2 b2st propSC,
+            gam |- b1 \v: b1st ->
+            gam |- b2 \v: b2st ->
+            (b1st _<= propSC) -> (b2st _<= propSC) ->
+            gam |- (test cond b1 b2) \v: propSC
+
+        | SV_skip :
+            forall gam st,
+            gam |- skip \v: st
+
+        where "gam '|-' e '\c:' ST" := (scmd_type gam e ST).
+
 
     End STLC.
