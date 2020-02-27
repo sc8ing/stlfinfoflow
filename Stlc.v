@@ -52,11 +52,8 @@ Module STLC.
     | tru : exp
     | fls : exp
 
-    | seq : exp -> exp -> exp
     | test : exp -> exp -> exp -> exp
     | skip : exp.
-
-  Infix ";;" := seq (at level 80, right associativity).
 
 
   Open Scope string_scope.
@@ -143,12 +140,6 @@ Module STLC.
         substi x s tru tru
     | s_fls :
         substi x s fls fls
-
-    | s_seq :
-        forall c1 c1' c2 c2',
-        substi x s c1 c1' ->
-        substi x s c2 c2' ->
-        substi x s (c1;;c2) (c1';;c2')
 
     | s_test :
         forall t1 t1' t2 t2' t3 t3',
@@ -272,11 +263,6 @@ Module STLC.
             forall L H Gamma,
             [[L|H]] Gamma |- fls \in Bool
 
-        | T_seq :
-            forall L H Gamma e1 e2,
-            (* what about the Gamma' that e1 can create? *)
-            [[L|H]] Gamma |- (e1 ;; e2) \in Unit
-
         | T_test :
             forall L H cond b1 b2 T Gamma,
             [[L|H]] Gamma |- cond \in Bool ->
@@ -323,13 +309,6 @@ Module STLC.
 
         | SC_tru : forall gam st, gam |- tru \c: st
         | SC_fls : forall gam st, gam |- fls \c: st
-
-        | SC_seq :
-            forall gam e1 e1st e2 e2st propSC,
-            gam |- e1 \c: e1st ->
-            gam |- e2 \c: e2st ->
-            (propSC _<= e1st) -> (propSC _<= e2st) ->
-            gam |- e1;;e2 \c: propSC
 
         | SC_test :
             forall gam cond b1 b1st b2 b2st propSC,
@@ -381,13 +360,6 @@ Module STLC.
 
         | SV_tru : forall gam st, gam |- tru \v: st
         | SV_fls : forall gam st, gam |- fls \v: st
-
-        | SV_seq :
-            forall gam e1 e1st e2 e2st propSC,
-            gam |- e1 \v: e1st ->
-            gam |- e2 \v: e2st ->
-            (e1st _<= propSC) -> (e2st _<= propSC) ->
-            gam |- e1;;e2 \v: propSC
 
         | SV_test :
             forall gam cond b1 b1st b2 b2st propSC,
