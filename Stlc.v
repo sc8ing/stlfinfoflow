@@ -289,7 +289,7 @@ Module STLC.
         | SC_app :
             (* gam |- arg \c: argSC -> *) (* and gives gam'? *)
             (* depends on whether T_seq rule allows non units types *)
-            forall gam x T func arg subresult (argSC:stype) propSC,
+            forall gam x T func arg (argSC:stype) subresult propSC,
             substi x arg (abs x T func) subresult ->
             gam |- subresult \c: propSC ->
             gam |- (app (abs x T func) arg) \c: propSC
