@@ -52,8 +52,7 @@ Module STLC.
     | tru : exp
     | fls : exp
 
-    | test : exp -> exp -> exp -> exp
-    | skip : exp.
+    | test : exp -> exp -> exp -> exp.
 
 
   Open Scope string_scope.
@@ -147,9 +146,6 @@ Module STLC.
         substi x s t2 t2' ->
         substi x s t3 t3' ->
         substi x s (test t1 t2 t3) (test t1' t2' t3')
-
-    | s_skip :
-        substi x s skip skip
     .
 
     Hint Constructors substi.
@@ -170,11 +166,11 @@ Module STLC.
 
     | ST_write_L :
         forall loc L H data,
-        [[L|H]] (write data loc Low) --> skip [[(loc |-> data ; L) | H]]
+        [[L|H]] (write data loc Low) --> fls [[(loc |-> data ; L) | H]]
 
     | ST_write_H :
         forall loc L H data,
-        [[L|H]] (write data loc High) --> skip [[L | (loc |-> data ; H)]]
+        [[L|H]] (write data loc High) --> fls [[L | (loc |-> data ; H)]]
 
     | ST_appAbs :
         forall L H x T t12 v2 t12',
@@ -270,10 +266,6 @@ Module STLC.
             [[L|H]] Gamma |- b2 \in T ->
             [[L|H]] Gamma |- test cond b1 b2 \in T
 
-        | T_skip :
-            forall L H Gamma,
-            [[L|H]] Gamma |- skip \in Unit
-
         where "'[[' L '|' H ']]' Gamma '|-' t '\in' T" := (has_dtype L H Gamma t T).
 
       Hint Constructors has_dtype.
@@ -317,10 +309,6 @@ Module STLC.
             (* testing of condition depends on ST_seq *)
             (propSC _<= b1st) -> (propSC _<= b2st) ->
             gam |- (test cond b1 b2) \c: propSC
-
-        | SC_skip :
-            forall gam st,
-            gam |- skip \c: st
 
         where "gam '|-' e '\c:' ST" := (scmd_type gam e ST).
 
@@ -367,10 +355,6 @@ Module STLC.
             gam |- b2 \v: b2st ->
             (b1st _<= propSC) -> (b2st _<= propSC) ->
             gam |- (test cond b1 b2) \v: propSC
-
-        | SV_skip :
-            forall gam st,
-            gam |- skip \v: st
 
         where "gam '|-' e '\v:' ST" := (svar_type gam e ST).
 
