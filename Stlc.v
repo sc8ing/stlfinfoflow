@@ -45,41 +45,21 @@ Module STLC.
 
   Notation notB := (abs x Bool (test (var x) fls tru)).
 
-  (** * Operational Semantics *)
-  (** ** Values *)
-  Inductive value : tm -> Prop :=
-    | v_abs : forall x T t,
+  Inductive value : exp -> Prop :=
+    | v_abs :
+        forall x T t,
         value (abs x T t)
     | v_tru :
         value tru
     | v_fls :
-        value fls.
+        value fls
+    | v_markedval :
+        forall class val,
+        value val -> value (marked class val).
 
   Hint Constructors value.
 
-
-  (** ** Substitution *)
-  Reserved Notation "'[' x ':=' s ']' t" (at level 20).
-
-  Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
-    match t with
-    | var x' =>
-        if eqb_string x x' then s else t
-    | abs x' T t1 =>
-        abs x' T (if eqb_string x x' then t1 else ([x:=s] t1))
-    | app t1 t2 =>
-        app ([x:=s] t1) ([x:=s] t2)
-    | tru =>
-        tru
-    | fls =>
-        fls
-    | test t1 t2 t3 =>
-        test ([x:=s] t1) ([x:=s] t2) ([x:=s] t3)
-    end
-
-    where "'[' x ':=' s ']' t" := (subst x s t).
-
-
+  (*
   Inductive substi (x : string) (s : tm) : tm -> tm -> Prop :=
     | s_var_eq :
         substi x s (var x) s
@@ -120,31 +100,56 @@ Module STLC.
       + simpl in H. destruct (eqb_string x0 s0) eqn:E.
         * subst. apply eqb_string_true_iff in E. subst. apply s_var_eq.
   Admitted.
+  *)
 
-
-  (* Smallstep Semantics *)
   Reserved Notation "t1 '-->' t2" (at level 40).
-
   Inductive step : tm -> tm -> Prop :=
-    | ST_AppAbs : forall x T t12 v2,
+    | ST_AppAbs :
+        forall x T t12 v2,
         value v2 ->
         (app (abs x T t12) v2) --> [x:=v2]t12
-    | ST_App1 : forall t1 t1' t2,
+
+    | ST_App1 :
+        forall t1 t1' t2,
         t1 --> t1' ->
         app t1 t2 --> app t1' t2
-    | ST_App2 : forall v1 t2 t2',
+
+    | ST_App2 :
+        forall v1 t2 t2',
         value v1 ->
         t2 --> t2' ->
         app v1 t2 --> app v1  t2'
-    | ST_TestTru : forall t1 t2,
+
+    | ST_TestTru :
+        forall t1 t2,
         (test tru t1 t2) --> t1
-    | ST_TestFls : forall t1 t2,
+
+    | ST_TestFls :
+        forall t1 t2,
         (test fls t1 t2) --> t2
-    | ST_Test : forall t1 t1' t2 t3,
+
+    | ST_Test :
+        forall t1 t1' t2 t3,
         t1 --> t1' ->
         (test t1 t2 t3) --> (test t1' t2 t3)
 
-        where "t1 '-->' t2" := (step t1 t2).
+    | ST_LiftApp :
+        forall class func e,
+        (app (marked class func) e) --> (marked class (app func e))
+
+    | ST_LiftTestCond :
+        forall class cond b1 b2,
+        (test (marked class cond) b1 b2) --> (marked class (test cond b1 b2))
+
+    | ST_LiftTestB1 :
+        forall class cond b1 b2,
+        (test cond (marked class b1) b2) --> (marked class (test cond b1 b2))
+
+    | ST_LiftTestB2 :
+        forall class cond b1 b2,
+        (test cond b1 (marked class b2)) --> (marked class (test cond b1 b2))
+
+    where "t1 '-->' t2" := (step t1 t2).
 
   Hint Constructors step.
 
