@@ -59,8 +59,8 @@ Module STLC.
 
   Hint Constructors value.
 
-  (*
-  Inductive substi (x : string) (s : tm) : tm -> tm -> Prop :=
+  Reserved Notation "'[' x '//' v ']' e 'is' r" (at level 40).
+  Inductive substi (x : string) (s : exp) : exp -> exp -> Prop :=
     | s_var_eq :
         substi x s (var x) s
     | s_var_neq :
@@ -88,26 +88,22 @@ Module STLC.
         substi x s t2 t2' ->
         substi x s t3 t3' ->
         substi x s (test t1 t2 t3) (test t1' t2' t3')
+    | s_marked :
+        forall class e e',
+        substi x s e e' ->
+        substi x s (marked class e) (marked class e')
+      where "'[' v '//' x ']' e 'is' r" := (substi x v e r)
   .
 
   Hint Constructors substi.
 
-  Theorem subst_substi_eq : forall x s t t',
-    [x:=s]t = t' <-> substi x s t t'.
-  Proof.
-    intros. split; intros H.
-    - induction t.
-      + simpl in H. destruct (eqb_string x0 s0) eqn:E.
-        * subst. apply eqb_string_true_iff in E. subst. apply s_var_eq.
-  Admitted.
-  *)
-
   Reserved Notation "t1 '-->' t2" (at level 40).
-  Inductive step : tm -> tm -> Prop :=
+  Inductive step : exp -> exp -> Prop :=
     | ST_AppAbs :
-        forall x T t12 v2,
+        forall x T t12 v2 subres,
         value v2 ->
-        (app (abs x T t12) v2) --> [x:=v2]t12
+        [v2//x] t12 is subres ->
+        (app (abs x T t12) v2) --> subres
 
     | ST_App1 :
         forall t1 t1' t2,
@@ -157,34 +153,63 @@ Module STLC.
   Notation "t1 '-->*' t2" := (multistep t1 t2) (at level 40).
 
 
-  (** * Typing *)
-  Definition context := partial_map ty.
-
-  (** ** Typing Relation *)
+  Definition context := partial_map data_type.
 
   Reserved Notation "Gamma '|-' t '\in' T" (at level 40).
 
-  Inductive has_type : context -> tm -> ty -> Prop :=
+  Inductive has_dtype : context -> exp -> data_type -> Prop :=
     | T_Var : forall Gamma x T,
         Gamma x = Some T ->
         Gamma |- var x \in T
+
     | T_Abs : forall Gamma x T11 T12 t12,
         (x |-> T11 ; Gamma) |- t12 \in T12 ->
-            Gamma |- abs x T11 t12 \in Arrow T11 T12
+        Gamma |- abs x T11 t12 \in Arrow T11 T12
+
     | T_App : forall T11 T12 Gamma t1 t2,
         Gamma |- t1 \in Arrow T11 T12 ->
-            Gamma |- t2 \in T11 ->
-                Gamma |- app t1 t2 \in T12
+        Gamma |- t2 \in T11 ->
+        Gamma |- app t1 t2 \in T12
+
     | T_Tru : forall Gamma,
         Gamma |- tru \in Bool
     | T_Fls : forall Gamma,
         Gamma |- fls \in Bool
+
     | T_Test : forall t1 t2 t3 T Gamma,
         Gamma |- t1 \in Bool ->
-            Gamma |- t2 \in T ->
-                Gamma |- t3 \in T ->
-                    Gamma |- test t1 t2 t3 \in T
-                        where "Gamma '|-' t '\in' T" := (has_type Gamma t T).
+        Gamma |- t2 \in T ->
+        Gamma |- t3 \in T ->
+        Gamma |- test t1 t2 t3 \in T
 
-  Hint Constructors has_type.
+    | T_Marked : forall Gamma class e T,
+        Gamma |- e \in T ->
+        Gamma |- marked class e \in T
+
+    where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
+
+  Hint Constructors has_dtype.
+
+  (* Reserved Notation "a << b" (at level 40). *)
+  Definition holier (a : exp) (b : exp) : Prop :=
+    True.
+  Notation "a << b" := (holier a b) (at level 40).
+
+  Lemma monotonicity : forall e e' f,
+    e << e' ->
+    e -->* f ->
+    e' -->* f.
+  Proof.
+  Admitted.
+
+  Definition prune (e : exp) (allowed : exp) (res : exp) : Prop :=
+    True.
+  Notation "\\ e // L >> r" := (prune e L r) (at level 40).
+
+  Lemma stability : forall e f L,
+    e -->* f ->
+    \\f//L >> f ->
+    \\e//L >> f.
+  Proof.
+  Admitted.
 End STLC.
