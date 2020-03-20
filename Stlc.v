@@ -20,7 +20,8 @@ Module STLC.
     | tru : exp
     | fls : exp
     | test : exp -> exp -> exp -> exp
-    | marked : sec_class -> exp -> exp.
+    | marked : sec_class -> exp -> exp
+    | hole.
 
   Open Scope string_scope.
   Definition x := "x".
@@ -59,7 +60,7 @@ Module STLC.
 
   Hint Constructors value.
 
-  Reserved Notation "'[' x '//' v ']' e 'is' r" (at level 40).
+  Reserved Notation "'[' v '//' x ']' e 'is' r" (at level 40).
   Inductive substi (x : string) (s : exp) : exp -> exp -> Prop :=
     | s_var_eq :
         substi x s (var x) s
@@ -137,13 +138,10 @@ Module STLC.
         forall class cond b1 b2,
         (test (marked class cond) b1 b2) --> (marked class (test cond b1 b2))
 
-    | ST_LiftTestB1 :
-        forall class cond b1 b2,
-        (test cond (marked class b1) b2) --> (marked class (test cond b1 b2))
-
-    | ST_LiftTestB2 :
-        forall class cond b1 b2,
-        (test cond b1 (marked class b2)) --> (marked class (test cond b1 b2))
+    | ST_MarkReduce :
+        forall class body body',
+        body --> body' ->
+        (marked class body) --> (marked class body')
 
     where "t1 '-->' t2" := (step t1 t2).
 
@@ -184,16 +182,40 @@ Module STLC.
 
     | T_Marked : forall Gamma class e T,
         Gamma |- e \in T ->
+(*        (protected class dtype) -> *)
         Gamma |- marked class e \in T
 
     where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
 
   Hint Constructors has_dtype.
 
-  (* Reserved Notation "a << b" (at level 40). *)
-  Definition holier (a : exp) (b : exp) : Prop :=
-    True.
-  Notation "a << b" := (holier a b) (at level 40).
+  Reserved Notation "a << b" (at level 40).
+  Inductive holier : exp -> exp -> Prop :=
+    | H_refl :
+        forall e,
+        e << e
+
+    | H_hole :
+        forall e,
+        hole << e
+
+    | H_app :
+        forall func arg func' arg',
+        func << func' ->
+        arg << arg' ->
+        (app func arg) << (app func' arg')
+
+    | H_abs :
+        forall x T body body',
+        body << body' ->
+        (abs x T body) << (abs x T body')
+
+    | H_marked :
+        forall class body body',
+        body << body' ->
+        (marked class body) << (marked class body')
+
+    where "a << b" := (holier a b).
 
   Lemma monotonicity : forall e e' f,
     e << e' ->
