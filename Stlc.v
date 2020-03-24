@@ -23,6 +23,14 @@ Module STLC.
     | marked : sec_class -> exp -> exp
     | hole.
 
+  Inductive protected (l : sec_class) : data_type -> Prop :=
+    | P_bool :
+        protected l Bool
+    | P_arrow :
+        forall t1 t2,
+        protected l t2 ->
+        protected l (Arrow t1 t2).
+
   Open Scope string_scope.
   Definition x := "x".
   Definition y := "y".
@@ -210,6 +218,13 @@ Module STLC.
         body << body' ->
         (abs x T body) << (abs x T body')
 
+    | H_test :
+        forall cond b1 b2 cond' b1' b2',
+        cond << cond' ->
+        b1 << b1' ->
+        b2 << b2' ->
+        (test cond b1 b2) << (test cond' b1' b2')
+
     | H_marked :
         forall class body body',
         body << body' ->
@@ -217,21 +232,72 @@ Module STLC.
 
     where "a << b" := (holier a b).
 
+
+  Inductive noholes : exp -> Prop :=
+    | NH_var : forall s,
+        noholes (var s)
+
+    | NH_app : forall func arg,
+        noholes func -> noholes arg ->
+        noholes (app func arg)
+
+    | NH_abs : forall x T func,
+        noholes func ->
+        noholes (abs x T func)
+
+    | NH_tru : noholes tru
+    | NH_fls : noholes fls
+
+    | NH_test : forall cond b1 b2,
+        noholes cond -> noholes b1 -> noholes b2 ->
+        noholes (test cond b1 b2)
+
+    | NH_marked : forall class body,
+        noholes body ->
+        noholes (marked class body).
+
+
   Lemma monotonicity : forall e e' f,
+    noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
   Proof.
   Admitted.
 
-  Definition prune (e : exp) (allowed : exp) (res : exp) : Prop :=
-    True.
-  Notation "\\ e // L >> r" := (prune e L r) (at level 40).
+  Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
+    match e with
+    | app func arg =>
+        let func' := prune_single l func in
+        let arg' := prune_single l arg in
+        app func' arg'
 
-  Lemma stability : forall e f L,
+    | abs x T body => abs x T (prune_single l body)
+
+    | test cond b1 b2 =>
+        let cond' := prune_single l cond in
+        let b1' := prune_single l b1 in
+        let b2' := prune_single l b2 in
+        test cond' b1' b2'
+
+    | (marked lab body) as e => tru (*if lab =? l then hole else e*)
+
+    | other => other
+    end.
+
+  Definition prune (a:list sec_class) (e:exp):exp := tru.
+  (*
+  Definition prune (allowed : list sec_class) (e : exp) : exp :=
+    List.fold_left (fun e' lab => prune_single lab e') e allowed.
+  *)
+
+  Notation "\\ e //_ labs" := (prune labs e) (at level 40).
+
+  Lemma stability : forall e f labs,
+    noholes f ->
     e -->* f ->
-    \\f//L >> f ->
-    \\e//L >> f.
+    \\ f //_labs =? f ->
+    \\ e //_labs -->* f.
   Proof.
   Admitted.
 End STLC.
