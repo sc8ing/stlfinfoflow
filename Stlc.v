@@ -3,15 +3,24 @@ Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Strings.String.
 From STLCIF Require Import Maps.
 From STLCIF Require Import Smallstep.
+Require Import Coq.Strings.String.
+Require Import Ascii.
+Require Import Bool.
 
 Module STLC.
   Inductive data_type : Type :=
     | Bool  : data_type
     | Arrow : data_type -> data_type -> data_type.
+  Definition data_type_eq_dec :
+    forall (x y : data_type), { x = y } + { x <> y }.
+  Proof. decide equality. Defined.
 
   Inductive sec_class : Type :=
     | High : sec_class
     | Low : sec_class.
+  Definition sec_class_eq_dec :
+    forall (x y : sec_class), { x = y } + { x <> y }.
+  Proof. decide equality. Defined.
 
   Inductive exp : Type :=
     | var : string -> exp
@@ -22,6 +31,24 @@ Module STLC.
     | test : exp -> exp -> exp -> exp
     | marked : sec_class -> exp -> exp
     | hole.
+  Inductive expeq : exp -> exp -> Prop :=
+    | EEQ_refl : forall e,
+        expeq e e
+    | EEQ_trans : forall a b c,
+        expeq a b -> expeq b c ->
+        expeq a c
+    | EEQ_sym : forall a b,
+        expeq a b ->
+        expeq b a.
+
+  Definition exp_eq_dec :
+    forall (x y : exp), { x = y } + { x <> y }.
+  Proof.
+    decide equality.
+    - destruct s eqn:E. destruct s0 eqn:E2.
+      + left. reflexivity.
+      + Admitted.
+(*  Defined. *)
 
   Inductive protected (l : sec_class) : data_type -> Prop :=
     | P_bool :
@@ -263,6 +290,8 @@ Module STLC.
     e -->* f ->
     e' -->* f.
   Proof.
+  intros. induction e; inversion H0; subst; try assumption.
+  - apply IHe1. inversion H1. subst.
   Admitted.
 
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
@@ -285,19 +314,20 @@ Module STLC.
     | other => other
     end.
 
-  Definition prune (a:list sec_class) (e:exp):exp := tru.
-  (*
   Definition prune (allowed : list sec_class) (e : exp) : exp :=
-    List.fold_left (fun e' lab => prune_single lab e') e allowed.
-  *)
+    List.fold_left (fun e' lab => prune_single lab e') allowed e.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
-    \\ f //_labs =? f ->
+    expeq (\\ f //_labs) f ->
     \\ e //_labs -->* f.
   Proof.
-  Admitted.
+  intros. induction e.
+  - inversion H0; subst. inversion H1; subst.
+    + rewrite -> H4. rewrite H4. apply multi_refl.
+    + inversion H1; subst. (* without eqb_eq stuff crazy *)
+
 End STLC.
