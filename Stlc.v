@@ -306,19 +306,66 @@ Module STLC.
     - assumption.
     - inversion H; subst. apply IHsubsti in H3.
       apply NH_abs. assumption.
-    - inversion H; subst. apply IHsubsti1 in H2.
-      apply IHsubsti2 in H3. apply NH_app; assumption.
+    - inversion H; subst.
+      apply IHsubsti1 in H2.
+      apply IHsubsti2 in H3.
+      apply NH_app; assumption.
     - assumption.
     - assumption.
-    - inversion H.
-  Admitted.
-
+    - inversion H; subst.
+      apply IHsubsti1 in H3.
+      apply IHsubsti2 in H4.
+      apply IHsubsti3 in H5.
+      apply NH_test; assumption.
+    - inversion H; subst.
+      apply IHsubsti in H2.
+      apply NH_marked. assumption.
+  Qed.
 
   Lemma noholes_app_arg_orunused : forall x body arg f,
   noholes f ->
   [arg // x] body is f ->
   noholes arg \/ forall xsub, [xsub // x] body is f.
   Proof.
+    intros. induction H0.
+    - left. assumption.
+    - right. intros. econstructor. auto.
+    - right. intros. constructor.
+    - right. intros. constructor.
+      + assumption.
+      + inversion H; subst.
+        specialize H3 as H3'. apply IHsubsti in H3.
+        destruct H3 as [argnoholes | argunused].
+        * admit.
+        * apply argunused.
+    - inversion H; subst.
+      specialize H2 as H2'.
+      specialize H3 as H3'.
+      apply IHsubsti1 in H2.
+      apply IHsubsti2 in H3.
+      (* destruct on yes/no whether arg has holes? *)
+      (*
+      induction H2. induction H3.
+      + left. assumption.
+      + left. assumption.
+      + right. intros. constructor.
+
+      destruct H2 as [argnoholes | argunused].
+      destruct H3 as [argnoholes2 | argunused2].
+      + left. assumption.
+      + left. assumption.
+      + right. intros. constructor.
+        * apply IHsubsti1 in H2'.
+      *)
+        admit.
+    - right. constructor.
+    - right. constructor.
+    - (* same issue *) admit.
+    - (* same *)
+      inversion H; subst.
+      specialize H2 as H2'.
+      apply IHsubsti in H2.
+      admit.
   Admitted.
 
 
