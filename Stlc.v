@@ -31,23 +31,15 @@ Module STLC.
     | test : exp -> exp -> exp -> exp
     | marked : sec_class -> exp -> exp
     | hole.
-  Inductive expeq : exp -> exp -> Prop :=
-    | EEQ_refl : forall e,
-        expeq e e
-    | EEQ_trans : forall a b c,
-        expeq a b -> expeq b c ->
-        expeq a c
-    | EEQ_sym : forall a b,
-        expeq a b ->
-        expeq b a.
-
+  
   Definition exp_eq_dec :
     forall (x y : exp), { x = y } + { x <> y }.
   Proof.
     decide equality.
-    - destruct s eqn:E. destruct s0 eqn:E2.
-      + left. reflexivity.
-      + Admitted.
+    - destruct (string_dec s s0) eqn:E.
+      + left. auto.
+      + right. auto.
+    - Admitted.
 (*  Defined. *)
 
   Inductive protected (l : sec_class) : data_type -> Prop :=
@@ -284,15 +276,87 @@ Module STLC.
         noholes (marked class body).
 
 
+  Lemma holyval_meansval : forall v1 v2,
+    value v1 ->
+    v1 << v2 ->
+    value v2.
+  Proof.
+    intros. generalize dependent v2.
+    induction H; intros; inversion H0; constructor.
+    - subst. assumption.
+    - subst. apply IHvalue. assumption.
+  Qed.
+
+
+  Lemma holier_abs_inv : forall x T body e',
+    (abs x T body) << e' ->
+    exists body', body << body' /\ e' = (abs x T body').
+  Proof.
+  Admitted.
+
+
+  Lemma noholes_app_body : forall x body arg f,
+  noholes f ->
+  [arg // x] body is f ->
+  noholes body.
+  Proof.
+    intros. induction H0.
+    - econstructor.
+    - assumption.
+    - assumption.
+    - inversion H; subst. apply IHsubsti in H3.
+      apply NH_abs. assumption.
+    - inversion H; subst. apply IHsubsti1 in H2.
+      apply IHsubsti2 in H3. apply NH_app; assumption.
+    - assumption.
+    - assumption.
+    - inversion H.
+  Admitted.
+
+
+  Lemma noholes_app_arg_orunused : forall x body arg f,
+  noholes f ->
+  [arg // x] body is f ->
+  noholes arg \/ forall xsub, [xsub // x] body is f.
+  Proof.
+  Admitted.
+
+
+  Lemma monotonicity_single_step : forall e e' f,
+    noholes f ->
+    e << e' ->
+    e --> f ->
+    e' -->* f.
+  Proof.
+    intros. generalize dependent f. induction H0; intros.
+    - apply multi_R. assumption.
+    - inversion H1; subst.
+    - inversion H1; subst.
+      + apply holier_abs_inv in H0_.
+        destruct H0_ as [body' [bodyprop funcprop]].
+        subst. specialize H0_0 as H'.
+        apply holyval_meansval in H0_0.
+        eapply multi_step.
+        apply ST_AppAbs.
+        assumption.
+  Admitted.
+
+  
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
   Proof.
-  intros. induction e; inversion H0; subst; try assumption.
-  - apply IHe1. inversion H1. subst.
+    intros. generalize dependent f. induction H0; intros.
+    - assumption.
+    - inversion H1; subst.
+      + inversion H.
+      + inversion H0.
+    - inversion H1; subst.
+      + 
   Admitted.
+
 
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
@@ -309,7 +373,8 @@ Module STLC.
         let b2' := prune_single l b2 in
         test cond' b1' b2'
 
-    | (marked lab body) as e => tru (*if lab =? l then hole else e*)
+    | (marked lab body) as e =>
+        if sec_class_eq_dec lab l then hole else e
 
     | other => other
     end.
@@ -319,15 +384,13 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
+
+  (* induction on stepping relation num steps *)
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
-    expeq (\\ f //_labs) f ->
+    (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
-  intros. induction e.
-  - inversion H0; subst. inversion H1; subst.
-    + rewrite -> H4. rewrite H4. apply multi_refl.
-    + inversion H1; subst. (* without eqb_eq stuff crazy *)
-
+  Admitted.
 End STLC.
