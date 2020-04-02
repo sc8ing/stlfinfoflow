@@ -251,6 +251,8 @@ Module STLC.
 
     where "a << b" := (holier a b).
 
+  Hint Constructors holier.
+
 
   Inductive noholes : exp -> Prop :=
     | NH_var : forall s,
@@ -292,7 +294,17 @@ Module STLC.
     (abs x T body) << e' ->
     exists body', body << body' /\ e' = (abs x T body').
   Proof.
-  Admitted.
+    intros. inversion H; subst. induction body.
+    - exists (var s). auto.
+    - exists (app body1 body2). auto.
+    - exists (abs s d body). auto.
+    - exists tru. auto.
+    - exists fls. auto.
+    - exists (test body1 body2 body3). auto.
+    - exists (marked s body). auto.
+    - exists hole. auto.
+    - exists body'. auto.
+  Qed.
 
 
   Lemma noholes_app_body : forall x body arg f,
