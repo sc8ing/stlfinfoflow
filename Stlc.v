@@ -294,16 +294,9 @@ Module STLC.
     (abs x T body) << e' ->
     exists body', body << body' /\ e' = (abs x T body').
   Proof.
-    intros. inversion H; subst. induction body.
-    - exists (var s). auto.
-    - exists (app body1 body2). auto.
-    - exists (abs s d body). auto.
-    - exists tru. auto.
-    - exists fls. auto.
-    - exists (test body1 body2 body3). auto.
-    - exists (marked s body). auto.
-    - exists hole. auto.
-    - exists body'. auto.
+    intros. inversion H; subst.
+    induction body; eexists; eauto.
+    exists body'. auto.
   Qed.
 
 
@@ -343,41 +336,51 @@ Module STLC.
     - left. assumption.
     - right. intros. econstructor. auto.
     - right. intros. constructor.
-    - right. intros. constructor.
-      + assumption.
-      + inversion H; subst.
-        specialize H3 as H3'. apply IHsubsti in H3.
-        destruct H3 as [argnoholes | argunused].
-        * admit.
-        * apply argunused.
+    - inversion H; subst.
+      specialize H3 as H3'. apply IHsubsti in H3.
+      destruct H3 as [argnoholes | argunused].
+      * left. assumption.
+      * right. intros. constructor.
+        eauto. eauto.
     - inversion H; subst.
       specialize H2 as H2'.
       specialize H3 as H3'.
       apply IHsubsti1 in H2.
       apply IHsubsti2 in H3.
-      (* destruct on yes/no whether arg has holes? can apply some sort of lem tactic? *)
-      (*
-      induction H2. induction H3.
+      destruct H2 as [nh1 | unused1].
       + left. assumption.
-      + left. assumption.
-      + right. intros. constructor.
-
-      destruct H2 as [argnoholes | argunused].
-      destruct H3 as [argnoholes2 | argunused2].
-      + left. assumption.
-      + left. assumption.
-      + right. intros. constructor.
-        * apply IHsubsti1 in H2'.
-      *)
-        admit.
+      + destruct H3 as [nh2 | unused2].
+        * left. assumption.
+        * right. intros. constructor.
+          auto. auto.
     - right. constructor.
     - right. constructor.
-    - (* same issue *) admit.
+    - admit.
     - (* same *)
       inversion H; subst.
       specialize H2 as H2'.
       apply IHsubsti in H2.
       admit.
+  Admitted.
+  
+  Lemma noholes_holier_means_eq : forall e e',
+    noholes e ->
+    e << e' ->
+    e = e'.
+  Proof.
+  Admitted.
+
+  Lemma subst_noholes : forall x body arg result,
+    [ arg // x ] body is result ->
+    noholes result ->
+    noholes body.
+  Proof.
+  Admitted.
+
+  Lemma bodystepsappsteps : forall body arg body',
+    body -->* body' ->
+    (app body arg) -->* (app body' arg).
+  Proof.
   Admitted.
 
 
@@ -396,24 +399,39 @@ Module STLC.
         subst. specialize H0_0 as H'.
         apply holyval_meansval in H0_0.
         eapply multi_step.
-        apply ST_AppAbs.
-        assumption.
+        specialize H5 as H5'.
+        apply noholes_app_arg_orunused in H5; eauto.
+        destruct H5 as [nh | unused].
+        * apply noholes_holier_means_eq in H'.
+          subst.
+          apply subst_noholes in H5'; eauto.
+          apply noholes_holier_means_eq in bodyprop; eauto.
+          subst. eauto. assumption.
+        * apply subst_noholes in H5'; eauto.
+          apply noholes_holier_means_eq in bodyprop; eauto.
+          subst.
+          constructor; eauto.
+        * constructor.
+        * assumption.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_0; eauto.
+        subst.
+        eapply bodystepsappsteps.
+        apply IHholier1; eauto.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; eauto.
+        subst.
   Admitted.
 
   
+
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
   Proof.
-    intros. generalize dependent f. induction H0; intros.
-    - assumption.
-    - inversion H1; subst.
-      + inversion H.
-      + inversion H0.
-    - inversion H1; subst.
-      + (* wrong *)
+    intros. induction H1.
   Admitted.
 
 
@@ -443,6 +461,8 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
+  (* e single steps f like monotonciity *)
+  (* induction on the single step *)
 
   (* induction on stepping relation num steps *)
   Lemma stability : forall e f labs,
