@@ -355,7 +355,7 @@ Module STLC.
       specialize H3 as H3'.
       apply IHsubsti1 in H2.
       apply IHsubsti2 in H3.
-      (* destruct on yes/no whether arg has holes? *)
+      (* destruct on yes/no whether arg has holes? can apply some sort of lem tactic? *)
       (*
       induction H2. induction H3.
       + left. assumption.
@@ -413,7 +413,7 @@ Module STLC.
       + inversion H.
       + inversion H0.
     - inversion H1; subst.
-      + 
+      + (* wrong *)
   Admitted.
 
 
@@ -451,5 +451,8 @@ Module STLC.
     (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
+    intros. induction H0.
+    - rewrite H1. apply multi_refl.
+    - apply multi_step with y0. (*?*)
   Admitted.
 End STLC.
