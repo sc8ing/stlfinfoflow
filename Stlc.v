@@ -378,7 +378,24 @@ Module STLC.
     e << e' ->
     e = e'.
   Proof.
-  Admitted.
+    intros. generalize dependent e'. induction H; intros; subst.
+    - inversion H0. auto.
+    - inversion H1; subst; auto.
+      apply IHnoholes1 in H4.
+      apply IHnoholes2 in H6.
+      subst. auto.
+    - inversion H0; subst; auto.
+      apply IHnoholes in H5; subst; auto.
+    - inversion H0; subst; auto.
+    - inversion H0; subst; auto.
+    - inversion H2; subst; auto.
+      apply IHnoholes1 in H6.
+      apply IHnoholes2 in H8.
+      apply IHnoholes3 in H9.
+      subst. auto.
+    - inversion H0; subst; auto.
+      apply IHnoholes in H4; subst; auto.
+  Qed.
 
   Lemma subst_noholes : forall x body arg result,
     [ arg // x ] body is result ->
