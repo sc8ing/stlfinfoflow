@@ -402,7 +402,23 @@ Module STLC.
     noholes result ->
     noholes body.
   Proof.
-  Admitted.
+    intros. induction H; constructor; auto.
+    - inversion H0; subst. auto.
+    - inversion H0; subst.
+      apply IHsubsti in H3. auto.
+    - inversion H0; subst.
+      apply IHsubsti1 in H4. auto.
+    - inversion H0; subst.
+      apply IHsubsti2 in H5. auto.
+    - inversion H0; subst.
+      apply IHsubsti1 in H6. auto.
+    - inversion H0; subst.
+      apply IHsubsti2 in H7. auto.
+    - inversion H0; subst.
+      apply IHsubsti3 in H8. auto.
+    - inversion H0; subst.
+      apply IHsubsti in H2. auto.
+  Qed.
 
   Lemma bodystepsappsteps : forall body arg body',
     body -->* body' ->
