@@ -424,7 +424,10 @@ Module STLC.
     body -->* body' ->
     (app body arg) -->* (app body' arg).
   Proof.
-  Admitted.
+    intros. induction H; subst.
+    - constructor.
+    - apply multi_step with (app y0 arg); auto.
+  Qed.
 
 
   Lemma monotonicity_single_step : forall e e' f,
