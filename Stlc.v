@@ -355,13 +355,23 @@ Module STLC.
           auto. auto.
     - right. constructor.
     - right. constructor.
-    - admit.
+    - inversion H; subst.
+      specialize H3 as H3'.
+      specialize H4 as H4'.
+      specialize H5 as H5'.
+      apply IHsubsti1 in H3.
+      apply IHsubsti2 in H4.
+      apply IHsubsti3 in H5.
+      destruct H3 as [nht1 | t1unused]. auto.
+      destruct H4 as [nht2 | t2unused]. auto.
+      destruct H5 as [nht3 | t3unused]. auto.
+      auto.
     - (* same *)
       inversion H; subst.
       specialize H2 as H2'.
       apply IHsubsti in H2.
-      admit.
-  Admitted.
+      destruct H2 as [nh | unused]; auto.
+  Qed.
   
   Lemma noholes_holier_means_eq : forall e e',
     noholes e ->
