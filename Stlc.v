@@ -129,7 +129,6 @@ Module STLC.
   Inductive step : exp -> exp -> Prop :=
     | ST_AppAbs :
         forall x T t12 v2 subres,
-        value v2 ->
         [v2//x] t12 is subres ->
         (app (abs x T t12) v2) --> subres
 
@@ -137,12 +136,6 @@ Module STLC.
         forall t1 t1' t2,
         t1 --> t1' ->
         app t1 t2 --> app t1' t2
-
-    | ST_App2 :
-        forall v1 t2 t2',
-        value v1 ->
-        t2 --> t2' ->
-        app v1 t2 --> app v1  t2'
 
     | ST_TestTru :
         forall t1 t2,
@@ -284,7 +277,7 @@ Module STLC.
     value v2.
   Proof.
     intros. generalize dependent v2.
-    induction H; intros; inversion H0; constructor.
+    induction H; intros; inversion H0; try constructor.
     - subst. assumption.
     - subst. apply IHvalue. assumption.
   Qed.
@@ -420,6 +413,7 @@ Module STLC.
       apply IHsubsti in H2. auto.
   Qed.
 
+
   Lemma bodystepsappsteps : forall body arg body',
     body -->* body' ->
     (app body arg) -->* (app body' arg).
@@ -428,6 +422,13 @@ Module STLC.
     - constructor.
     - apply multi_step with (app y0 arg); auto.
   Qed.
+
+
+  Lemma condstepsteststeps : forall cond cond' b1 b2,
+    cond -->* cond' ->
+    (test cond b1 b2) -->* (test cond' b1 b2).
+  Proof.
+  Admitted.
 
 
   Lemma monotonicity_single_step : forall e e' f,
@@ -443,30 +444,50 @@ Module STLC.
       + apply holier_abs_inv in H0_.
         destruct H0_ as [body' [bodyprop funcprop]].
         subst. specialize H0_0 as H'.
-        apply holyval_meansval in H0_0.
-        eapply multi_step.
-        specialize H5 as H5'.
-        apply noholes_app_arg_orunused in H5; eauto.
-        destruct H5 as [nh | unused].
+        eapply multi_R.
+        specialize H4 as H4'.
+        apply noholes_app_arg_orunused in H4; eauto.
+        destruct H4 as [nh | unused].
         * apply noholes_holier_means_eq in H'.
           subst.
-          apply subst_noholes in H5'; eauto.
+          apply subst_noholes in H4'; eauto.
           apply noholes_holier_means_eq in bodyprop; eauto.
           subst. eauto. assumption.
-        * apply subst_noholes in H5'; eauto.
+        * apply subst_noholes in H4'; eauto.
           apply noholes_holier_means_eq in bodyprop; eauto.
           subst.
           constructor; eauto.
-        * constructor.
-        * assumption.
       + inversion H; subst.
         apply noholes_holier_means_eq in H0_0; eauto.
         subst.
         eapply bodystepsappsteps.
         apply IHholier1; eauto.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        inversion H; subst. inversion H2; subst.
+        apply noholes_holier_means_eq in H0_0; subst; eauto.
+        apply multi_R. eauto.
+        inversion H; subst. inversion H2; subst.
+        constructor. auto.
+    - inversion H1.
+    - inversion H1; subst.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        apply noholes_holier_means_eq in H0_0; subst; eauto.
+        apply multi_R.
+        constructor.
+        constructor.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        apply noholes_holier_means_eq in H0_1; subst; eauto.
+        apply multi_R.
+        constructor.
+        constructor.
       + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; eauto.
-        subst.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+        apply IHholier1 in H5; auto.
+        apply condstepsteststeps. auto.
+      + 
+
+        
   Admitted.
 
   
@@ -477,7 +498,6 @@ Module STLC.
     e -->* f ->
     e' -->* f.
   Proof.
-    intros. induction H1.
   Admitted.
 
 
@@ -507,9 +527,19 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
-  (* e single steps f like monotonciity *)
-  (* induction on the single step *)
+  Lemma stabilitysinglestep : forall e f labs,
+    noholes f ->
+    e --> f ->
+    (\\ f //_labs) = f ->
+    \\ e //_labs -->* f.
+  Proof.
+    intros. induction H0.
+    - 
+  Admitted.
 
+
+  (* e single steps f like monotoncity *)
+  (* induction on the single step *)
   (* induction on stepping relation num steps *)
   Lemma stability : forall e f labs,
     noholes f ->
