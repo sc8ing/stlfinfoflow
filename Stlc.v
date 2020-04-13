@@ -1,3 +1,5 @@
+(** * Section Title Test *)
+(** blah blaha alsdfjalksdfjklajsfdlkjl *)
 
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Strings.String.
@@ -6,6 +8,8 @@ From STLCIF Require Import Smallstep.
 Require Import Coq.Strings.String.
 Require Import Ascii.
 Require Import Bool.
+
+(** *|-* test -> n ->~* *)
 
 Module STLC.
   Inductive data_type : Type :=
@@ -32,6 +36,7 @@ Module STLC.
     | marked : sec_class -> exp -> exp
     | hole.
   
+  (*
   Definition exp_eq_dec :
     forall (x y : exp), { x = y } + { x <> y }.
   Proof.
@@ -39,8 +44,10 @@ Module STLC.
     - destruct (string_dec s s0) eqn:E.
       + left. auto.
       + right. auto.
-    - Admitted.
+    - admit.
+  Admitted.
 (*  Defined. *)
+*)
 
   Inductive protected (l : sec_class) : data_type -> Prop :=
     | P_bool :
