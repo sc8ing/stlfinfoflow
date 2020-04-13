@@ -530,7 +530,15 @@ Module STLC.
     - inversion H1; subst.
       + inversion H; subst.
         apply noholes_holier_means_eq in H0; subst; auto.
-      + admit.
+      + eapply monotonicity_single_step in H2; auto.
+        * inversion H1; subst.
+          inversion H; subst.
+          specialize H5 as H5'.
+          apply IHholier in H5.
+          apply noholes_holier_means_eq in H0; subst; auto.
+          constructor.
+          admit.
+        * inversion H2.
     - inversion H1; subst.
       + inversion H; subst.
         apply noholes_holier_means_eq in H0_; subst; auto.
@@ -576,9 +584,8 @@ Module STLC.
     (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
-    intros. g
-    induction H0.
-    - 
+    intros. induction H0; subst.
+    - apply multi_R. 
   Admitted.
 
 
