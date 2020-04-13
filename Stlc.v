@@ -519,6 +519,28 @@ Module STLC.
     e -->* f ->
     e' -->* f.
   Proof.
+    intros. generalize dependent f.
+    induction H0; intros; subst; auto.
+    - inversion H1; subst. inversion H. inversion H0.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+      + admit.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0; subst; auto.
+      + admit.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+      + admit.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0; subst; auto.
+      + admit.
   Admitted.
 
 
@@ -554,7 +576,8 @@ Module STLC.
     (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
-    intros. induction H0.
+    intros. g
+    induction H0.
     - 
   Admitted.
 
