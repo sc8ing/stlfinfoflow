@@ -428,7 +428,19 @@ Module STLC.
     cond -->* cond' ->
     (test cond b1 b2) -->* (test cond' b1 b2).
   Proof.
-  Admitted.
+    intros. induction H; subst.
+    - constructor.
+    - apply multi_step with (test y0 b1 b2); auto.
+  Qed.
+
+  Lemma markedbodstepstermsteps : forall class body body',
+    body -->* body' ->
+    (marked class body) -->* (marked class body').
+  Proof.
+    intros. induction H; subst.
+    - constructor.
+    - apply multi_step with (marked class y0); auto.
+  Qed.
 
 
   Lemma monotonicity_single_step : forall e e' f,
@@ -485,10 +497,19 @@ Module STLC.
         apply noholes_holier_means_eq in H0_1; subst; auto.
         apply IHholier1 in H5; auto.
         apply condstepsteststeps. auto.
-      + 
-
-        
-  Admitted.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+        apply multi_R. apply ST_LiftTestCond.
+        inversion H2; subst; auto.
+        inversion H2; subst; auto.
+        constructor. inversion H2; subst; auto.
+    - inversion H1; subst.
+      inversion H; subst.
+      apply IHholier in H3; auto.
+      apply markedbodstepstermsteps. assumption.
+  Qed.
 
   
 
