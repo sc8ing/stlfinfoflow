@@ -518,14 +518,29 @@ Module STLC.
       apply markedbodstepstermsteps. assumption.
   Qed.
 
-  
+  Lemma multi_ind_rev :
+  forall (X : Type) (R : relation X) (P : X -> X -> Prop),
+  (forall x : X, P x x) ->
+  (forall x y z : X, R y z -> multi R x y -> P x y -> P x z) ->
+  forall y y0 : X, multi R y y0 -> P y y0.
+  Proof.
+  Admitted.
 
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
-  Proof.
+  Proof.(*
+    intros. generalize dependent e'.
+    induction H1.
+    - intros. apply noholes_holier_means_eq in H0; subst; auto.
+      apply multi_refl.
+    - intros. eapply monotonicity_single_step in H0.  *)
+
+
+
+
     intros. generalize dependent f.
     induction H0; intros; subst; auto.
     - inversion H1; subst. inversion H. inversion H0.
@@ -533,7 +548,8 @@ Module STLC.
       + inversion H; subst.
         apply noholes_holier_means_eq in H0_; subst; auto.
         apply noholes_holier_means_eq in H0_0; subst; auto.
-      + admit.
+      + inversion H0; subst.
+        * 
     - inversion H1; subst.
       + inversion H; subst.
         apply noholes_holier_means_eq in H0; subst; auto.
@@ -575,7 +591,7 @@ Module STLC.
         test cond' b1' b2'
 
     | (marked lab body) as e =>
-        if sec_class_eq_dec lab l then hole else e
+        if sec_class_eq_dec lab l then hole else (marked lab (prune_single l body))
 
     | other => other
     end.
@@ -585,15 +601,88 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
-  Lemma stabilitysinglestep : forall e f labs,
+
+  Lemma appprunedescend : forall x T body labs,
+    \\ (abs x T body) //_ labs = (abs x T (\\body//_labs)).
+  Proof.
+    intros. generalize dependent body. induction labs; subst.
+    - simpl. reflexivity.
+    - simpl. intros. apply IHlabs.
+  Qed.
+
+
+  Lemma subprunenoorder : forall v x body result lab,
+    [v // x] body is result ->
+    \\result//_(lab::nil) = result ->
+    [\\v//_(lab::nil) // x] \\body//_(lab::nil) is result.
+  Proof.
+    intros. induction H; subst.
+    - rewrite H0. simpl. auto.
+    - simpl. simpl in H0. auto.
+    - simpl. simpl in H0. inversion H0; subst.
+      rewrite H1. rewrite H1. auto.
+    - simpl in *. constructor; auto.
+      apply IHsubsti. inversion H0.
+      congruence.
+    - simpl in *.
+      constructor.
+      + apply IHsubsti1. inversion H0. congruence.
+      + apply IHsubsti2. inversion H0. congruence.
+    - simpl in *. auto.
+    - simpl in *. auto.
+    - simpl in *.
+      constructor.
+      + apply IHsubsti1. inversion H0. congruence.
+      + apply IHsubsti2. inversion H0. congruence.
+      + apply IHsubsti3. inversion H0. congruence.
+    - simpl in *. destruct (sec_class_eq_dec class lab).
+      subst.
+      + inversion H0.
+      + constructor. apply IHsubsti. congruence.
+  Qed.
+
+
+  Lemma stabilitysinglestep : forall e f lab,
     noholes f ->
     e --> f ->
-    (\\ f //_labs) = f ->
-    \\ e //_labs -->* f.
+    (\\ f //_ (lab::nil)) = f ->
+    \\ e //_ (lab::nil) -->* f.
   Proof.
     intros. induction H0; subst.
-    - apply multi_R. 
-  Admitted.
+    - simpl. apply multi_R. constructor.
+      apply subprunenoorder. auto. auto.
+    - simpl in *. inversion H1. rewrite H4. rewrite H4.
+      apply bodystepsappsteps.
+      rewrite H3. apply IHstep.
+      + inversion H; subst; auto.
+      + auto.
+    - simpl in *. apply multi_R. rewrite H1; auto.
+    - simpl in *. apply multi_R. rewrite H1; auto.
+    - simpl in *. inversion H1; subst.
+      repeat (rewrite H4).
+      repeat (rewrite H5).
+      repeat (rewrite H3).
+      apply condstepsteststeps.
+      apply IHstep; auto. inversion H; subst; auto.
+    - simpl in *. destruct (sec_class_eq_dec class lab).
+      + apply multi_R. inversion H1.
+      + apply multi_R. inversion H1.
+        repeat (rewrite H2).
+        repeat (rewrite H3).
+        constructor.
+    - simpl in *. destruct (sec_class_eq_dec class lab).
+      + inversion H1.
+      + inversion H1.
+        repeat (rewrite H2).
+        repeat (rewrite H3).
+        repeat (rewrite H4).
+        apply multi_R. auto.
+    - simpl in *. destruct (sec_class_eq_dec class lab).
+      + inversion H1.
+      + apply markedbodstepstermsteps. 
+        apply IHstep. inversion H; subst; auto.
+        inversion H1; subst. congruence.
+  Qed.
 
 
   (* e single steps f like monotoncity *)
