@@ -98,6 +98,7 @@ Module STLC.
     | s_var_eq :
         substi x s (var x) s
     | s_var_neq :
+        forall y,
         y <> x ->
         substi x s (var y) (var y)
     | s_abs_eq :
@@ -126,6 +127,8 @@ Module STLC.
         forall class e e',
         substi x s e e' ->
         substi x s (marked class e) (marked class e')
+    | s_hole :
+        substi x s hole hole
       where "'[' v '//' x ']' e 'is' r" := (substi x v e r)
   .
 
@@ -725,7 +728,7 @@ Module STLC.
   Proof.
   Admitted.
 
-(* Stability fully stated multible labels *)
+(* Stability fully stated multiple labels *)
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
