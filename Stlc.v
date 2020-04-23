@@ -1,5 +1,5 @@
 (** * Section Title Test *)
-(** blah blaha alsdfjalksdfjklajsfdlkjl *)
+(** alsdfjalksdfjklajsfdlkjl *)
 
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Strings.String.
@@ -9,7 +9,6 @@ Require Import Coq.Strings.String.
 Require Import Ascii.
 Require Import Bool.
 
-(** *|-* test -> n ->~* *)
 
 Module STLC.
   Inductive data_type : Type :=
@@ -450,6 +449,13 @@ Module STLC.
   Qed.
 
 
+
+
+  
+(******************************************************************)
+(** * Monotonicity *)
+
+(* Monotonicity single step *)
   Lemma monotonicity_single_step : forall e e' f,
     noholes f ->
     e << e' ->
@@ -518,63 +524,89 @@ Module STLC.
       apply markedbodstepstermsteps. assumption.
   Qed.
 
-  Lemma multi_ind_rev :
-  forall (X : Type) (R : relation X) (P : X -> X -> Prop),
-  (forall x : X, P x x) ->
-  (forall x y z : X, R y z -> multi R x y -> P x y -> P x z) ->
-  forall y y0 : X, multi R y y0 -> P y y0.
-  Proof.
-  Admitted.
+(** An unfortunate problem arises when trying to use the [monotonicity_single_step] proven above to prove the full [monotonicity] lemma below: as it turns out, the assertion is simply too weak. When induction is done on the multistep relation from [e] to [f] (i.e. the [e -->* f] line), it becomes necessary to prove that there exists a middle expression [m] such that [e --> m] and [m -->* f]. However, there is no guarantee that this middle expression satisfies the [noholes] proposition and therefore the [monotonicity_single_step] lemma no longer applies. *)
 
+(* Monotonicity fully stated original attemp *)
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
-  Proof.(*
+  Proof.
     intros. generalize dependent e'.
     induction H1.
     - intros. apply noholes_holier_means_eq in H0; subst; auto.
       apply multi_refl.
-    - intros. eapply monotonicity_single_step in H0.  *)
-
-
-
-
-    intros. generalize dependent f.
-    induction H0; intros; subst; auto.
-    - inversion H1; subst. inversion H. inversion H0.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; subst; auto.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-      + inversion H0; subst.
-        * 
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0; subst; auto.
-      + eapply monotonicity_single_step in H2; auto.
-        * inversion H1; subst.
-          inversion H; subst.
-          specialize H5 as H5'.
-          apply IHholier in H5.
-          apply noholes_holier_means_eq in H0; subst; auto.
-          constructor.
-          admit.
-        * inversion H2.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; subst; auto.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-        apply noholes_holier_means_eq in H0_1; subst; auto.
-      + admit.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0; subst; auto.
-      + admit.
+    - intros. eapply monotonicity_single_step in H0.
+      + apply IHmulti; auto.
+  Admitted.
+  
+(* Multistep induction reversal statement *)
+  Lemma multi_ind_rev :
+    forall (X : Type) (R : relation X) (P : X -> X -> Prop),
+    (forall x : X, P x x) ->
+    (forall x y z : X, R y z -> multi R x y -> P x y -> P x z) ->
+    forall y y0 : X, multi R y y0 -> P y y0.
+  Proof.
   Admitted.
 
+(**  One approach that was considered for remedying this problem is to reverse the induction principle. Concretely speaking, we could instruct Coq to take the same approach as outlined above with the middle expression [m], but instead formulate logically equivalent goals of the form [e -->* m] and [m --> f]. This would solve the problem of ensuring that [m] steps to something satisfying [noholes], but ends up losing other information necessary to complete the proof, namely that the expression [m] that [e] steps to is still holier than the expression [m'] that [e'] steps to, since [monotonicity_single_step] holds as a premise that [e << f]. *)
+(* TODO: I don't understand, likely stated incorrectly. *)
 
+(* Multistep induction reversal statement *)
+  Lemma multi_ind_rev :
+    forall (X : Type) (R : relation X) (P : X -> X -> Prop),
+    (forall x : X, P x x) ->
+    (forall x y z : X, R y z -> multi R x y -> P x y -> P x z) ->
+    forall y y0 : X, multi R y y0 -> P y y0.
+  Proof.
+  Admitted.
+
+(* Monotonicity fully stated reversed induction attempt *)
+  Lemma monotonicity_rev_ind : forall e e' f,
+    noholes f ->
+    e << e' ->
+    e -->* f ->
+    e' -->* f.
+  Proof.
+    intros. generalize dependent e'.
+    induction H1.
+    - intros. apply noholes_holier_means_eq in H0; subst; auto.
+      apply multi_refl.
+    - intros. eapply monotonicity_single_step in H0.
+      + apply IHmulti; auto.
+  Admitted.
+  
+(** The correct way to fix these issues involes restating [monotonicity_single_step] to remove the requirement that both [e] and [e'] step to the same expression. Such a lemma would look like this: *)
+
+  Lemma monotonicity_single_step : forall e e' f,
+    e << e' ->
+    e --> f ->
+    exists f', e' -->* f' /\ f << f'.
+  Proof.
+  Admitted.
+
+(** In other words, we slightly relax the requirements to allow for what [e'] steps to to be different from what [e] steps to, but must still have less holes ([f << f']).
+
+  A second intermediary lemma is then used to simplify the proof of the final [monotonicity] theorem where an [f'] term is introduced corresponding to its role in the above lemma. *)
+  
+  Lemma monotonicity' : forall e e' f,
+    e << e' ->
+    e -->* f ->
+    exists f', e' -->* f' /\ f << f'.
+  Proof.
+  Admitted.
+
+(** [monotonicity] can now be stated relying on the assumption that [f] has no holes. Since [monotonicity'] gives as a result that [f << f'], the only way this could be possible is if [f = f'] (as was proven in the [noholes_holier_means_eq] lemma). Formally, the final [monotonicity] theorem would be stated the same as before. *)
+  
+(**  Unfortunately, the problems related to the weakness of [monotonicity_single_step] as originally stated were encountered far too late in the semester to allow for time to redo the proofs. *)
+
+
+
+(******************************************************************)
+(** * Stability *)
+
+(* Pruning definitions and notation *)
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
     | app func arg =>
@@ -601,7 +633,7 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
-
+(* Pruning an abstraction is the same as pruning its body *)
   Lemma appprunedescend : forall x T body labs,
     \\ (abs x T body) //_ labs = (abs x T (\\body//_labs)).
   Proof.
@@ -610,7 +642,7 @@ Module STLC.
     - simpl. intros. apply IHlabs.
   Qed.
 
-
+(* If the result of a substitution has none of a label, then pruning the body for that label beforehand doesn't affect the result *)
   Lemma subprunenoorder : forall v x body result lab,
     [v // x] body is result ->
     \\result//_(lab::nil) = result ->
@@ -641,7 +673,7 @@ Module STLC.
       + constructor. apply IHsubsti. congruence.
   Qed.
 
-
+(* Stability single step *)
   Lemma stabilitysinglestep : forall e f lab,
     noholes f ->
     e --> f ->
@@ -684,18 +716,55 @@ Module STLC.
         inversion H1; subst. congruence.
   Qed.
 
-
-  (* e single steps f like monotoncity *)
-  (* induction on the single step *)
-  (* induction on stepping relation num steps *)
+(* Stability fully stated *)
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
     (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
-    intros. induction H0.
+    intros. induction H0. (* induction on e -->* f *)
     - rewrite H1. apply multi_refl.
     - apply multi_step with y0. (*?*)
   Admitted.
 End STLC.
+
+
+
+(******************************************************************)
+(* Scraps idk if will be needed *)
+
+(* monotonicity multistep holier induction attempt *)
+(*
+    (* induction on holier relation *)
+    intros. generalize dependent f.
+    induction H0; intros; subst; auto.
+    - inversion H1; subst. inversion H. inversion H0.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+      + admit.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0; subst; auto.
+      + eapply monotonicity_single_step in H2; auto.
+        * inversion H1; subst.
+          inversion H; subst.
+          specialize H5 as H5'.
+          apply IHholier in H5.
+          apply noholes_holier_means_eq in H0; subst; auto.
+          constructor.
+          admit.
+        * inversion H2.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+      + admit.
+    - inversion H1; subst.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0; subst; auto.
+      + admit.
+*)
