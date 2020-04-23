@@ -327,6 +327,7 @@ Module STLC.
     - inversion H; subst.
       apply IHsubsti in H2.
       apply NH_marked. assumption.
+    - inversion H.
   Qed.
 
   Lemma noholes_app_arg_orunused : forall x body arg f,
@@ -373,6 +374,7 @@ Module STLC.
       specialize H2 as H2'.
       apply IHsubsti in H2.
       destruct H2 as [nh | unused]; auto.
+    - inversion H.
   Qed.
   
   Lemma noholes_holier_means_eq : forall e e',
@@ -404,7 +406,7 @@ Module STLC.
     noholes result ->
     noholes body.
   Proof.
-    intros. induction H; constructor; auto.
+    intros. induction H; try constructor; auto.
     - inversion H0; subst. auto.
     - inversion H0; subst.
       apply IHsubsti in H3. auto.
@@ -544,15 +546,6 @@ Module STLC.
       + apply IHmulti; auto.
   Admitted.
   
-(* Multistep induction reversal statement *)
-  Lemma multi_ind_rev :
-    forall (X : Type) (R : relation X) (P : X -> X -> Prop),
-    (forall x : X, P x x) ->
-    (forall x y z : X, R y z -> multi R x y -> P x y -> P x z) ->
-    forall y y0 : X, multi R y y0 -> P y y0.
-  Proof.
-  Admitted.
-
 (**  One approach that was considered for remedying this problem is to reverse the induction principle. Concretely speaking, we could instruct Coq to take the same approach as outlined above with the middle expression [m], but instead formulate logically equivalent goals of the form [e -->* m] and [m --> f]. This would solve the problem of ensuring that [m] steps to something satisfying [noholes], but ends up losing other information necessary to complete the proof, namely that the expression [m] that [e] steps to is still holier than the expression [m'] that [e'] steps to, since [monotonicity_single_step] holds as a premise that [e << f]. *)
 (* TODO: I don't understand, likely stated incorrectly. *)
 
@@ -582,7 +575,7 @@ Module STLC.
   
 (** The correct way to fix these issues involes restating [monotonicity_single_step] to remove the requirement that both [e] and [e'] step to the same expression. Such a lemma would look like this: *)
 
-  Lemma monotonicity_single_step : forall e e' f,
+  Lemma monotonicity_single_step_revind : forall e e' f,
     e << e' ->
     e --> f ->
     exists f', e' -->* f' /\ f << f'.
@@ -674,6 +667,7 @@ Module STLC.
       subst.
       + inversion H0.
       + constructor. apply IHsubsti. congruence.
+    - constructor.
   Qed.
 
 (* Stability single step incorrectly stated & proven *)
