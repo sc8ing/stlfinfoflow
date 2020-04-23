@@ -673,8 +673,8 @@ Module STLC.
       + constructor. apply IHsubsti. congruence.
   Qed.
 
-(* Stability single step *)
-  Lemma stabilitysinglestep : forall e f lab,
+(* Stability single step incorrectly stated & proven *)
+  Lemma stabilitysinglestep_tooweak : forall e f lab,
     noholes f ->
     e --> f ->
     (\\ f //_ (lab::nil)) = f ->
@@ -716,7 +716,16 @@ Module STLC.
         inversion H1; subst. congruence.
   Qed.
 
-(* Stability fully stated *)
+(* Stability single step correctly stated *)
+  Lemma stabilitysinglestep : forall e f lab,
+    e --> f ->
+    ((\\ e //_ (lab::nil) -->* \\ f //_(lab :: nil))
+    \/
+    (\\ f //_(lab :: nil) << \\ e //_(lab::nil))).
+  Proof.
+  Admitted.
+
+(* Stability fully stated multible labels *)
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
@@ -727,6 +736,18 @@ Module STLC.
     - rewrite H1. apply multi_refl.
     - apply multi_step with y0. (*?*)
   Admitted.
+
+(* Stability fully stated single label *)
+  Lemma stabilitySingleLabel : forall e f labs,
+    noholes f ->
+    e -->* f ->
+    (\\ f //_(labs :: nil)) = f ->
+    \\ e //_(labs :: nil) -->* f.
+  Proof.
+  Admitted.
+
+
+
 End STLC.
 
 
