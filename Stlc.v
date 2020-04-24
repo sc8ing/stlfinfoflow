@@ -629,6 +629,12 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
+(* Prune of a 1-item list === prune_single *)
+  Lemma prunesinglelist : forall e lab,
+    \\ e //_(lab::nil) = prune_single lab e.
+  Proof.
+  Admitted.
+
 (* Pruning an abstraction is the same as pruning its body *)
   Lemma appprunedescend : forall x T body labs,
     \\ (abs x T body) //_ labs = (abs x T (\\body//_labs)).
@@ -713,14 +719,33 @@ Module STLC.
         inversion H1; subst. congruence.
   Qed.
 
+  (*
+  Lemma canstepbeforepruning : forall e e' lab,
+    e -->* e' ->
+    \\ e //_(lab::nil) -->* \\ e' //_(lab::nil).
+  Proof.
+    intros. induction H.
+    - constructor.
+    - admit.
+  Admitted.
+  *)
+
 (* Stability single step correctly stated *)
   Lemma stabilitysinglestep : forall e f lab,
     e --> f ->
-    ((\\ e //_ (lab::nil) -->* \\ f //_(lab :: nil))
+    ((\\ e //_(lab::nil) -->* \\ f //_(lab :: nil))
     \/
     (\\ f //_(lab :: nil) << \\ e //_(lab::nil))).
   Proof.
+    (* induction on the expression or stepping? *)
+    intros. generalize dependent f. induction e; intros.
+    - inversion H.
+    - inversion H; subst.
+      + admit.
+      + admit.
+    + 
   Admitted.
+
 
 (* Stability fully stated multiple labels *)
   Lemma stability : forall e f labs,
@@ -735,12 +760,26 @@ Module STLC.
   Admitted.
 
 (* Stability fully stated single label *)
-  Lemma stabilitySingleLabel : forall e f labs,
+  Lemma stabilitySingleLabel : forall e f lab,
     noholes f ->
     e -->* f ->
-    (\\ f //_(labs :: nil)) = f ->
-    \\ e //_(labs :: nil) -->* f.
+    (\\ f //_(lab :: nil)) = f ->
+    \\ e //_(lab :: nil) -->* f.
   Proof.
+    intros. induction H0.
+    - rewrite H1; constructor.
+    - apply stabilitysinglestep with
+      (e := x0) (f := y0) (lab := lab) in H0.
+      destruct H0 as [L | R].
+      + eapply multi_trans.
+        * apply L.
+        * apply IHmulti; auto.
+      + inversion R; subst.
+        * rewrite prunesinglelist.
+          rewrite <- H4.
+          rewrite <- prunesinglelist.
+          apply IHmulti; auto.
+        * admit.
   Admitted.
 
 
