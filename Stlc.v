@@ -547,7 +547,7 @@ Module STLC.
 
 (** An unfortunate problem arises when trying to use the [monotonicity_single_step] proven above to prove the full [monotonicity] lemma below: as it turns out, the assertion is simply too weak. When induction is done on the multistep relation from [e] to [f] (i.e. the [e -->* f] line), it becomes necessary to prove that there exists a middle expression [m] such that [e --> m] and [m -->* f]. However, there is no guarantee that this middle expression satisfies the [noholes] proposition and therefore the [monotonicity_single_step] lemma no longer applies. *)
 
-(* Monotonicity fully stated original attemp *)
+(* Monotonicity fully stated original attempt *)
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
@@ -563,7 +563,6 @@ Module STLC.
   Admitted.
   
 (**  One approach that was considered for remedying this problem is to reverse the induction principle. Concretely speaking, we could instruct Coq to take the same approach as outlined above with the middle expression [m], but instead formulate logically equivalent goals of the form [e -->* m] and [m --> f]. This would solve the problem of ensuring that [m] steps to something satisfying [noholes], but ends up losing other information necessary to complete the proof, namely that the expression [m] that [e] steps to is still holier than the expression [m'] that [e'] steps to, since [monotonicity_single_step] holds as a premise that [e << f]. *)
-(* TODO: I don't understand, likely stated incorrectly. *)
 
 (* Multistep induction reversal statement *)
   Lemma multi_ind_rev :
@@ -591,7 +590,7 @@ Module STLC.
   
 (** The correct way to fix these issues involes restating [monotonicity_single_step] to remove the requirement that both [e] and [e'] step to the same expression. Such a lemma would look like this: *)
 
-  Lemma monotonicity_single_step_revind : forall e e' f,
+  Lemma monotonicity_single_step' : forall e e' f,
     e << e' ->
     e --> f ->
     exists f', e' -->* f' /\ f << f'.
@@ -645,12 +644,6 @@ Module STLC.
 
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
 
-(* Prune of a 1-item list === prune_single *)
-  Lemma prunesinglelist : forall e lab,
-    \\ e //_(lab::nil) = prune_single lab e.
-  Proof.
-  Admitted.
-
 (* Pruning an abstraction is the same as pruning its body *)
   Lemma appprunedescend : forall x T body labs,
     \\ (abs x T body) //_ labs = (abs x T (\\body//_labs)).
@@ -666,31 +659,23 @@ Module STLC.
     \\result//_(lab::nil) = result ->
     [\\v//_(lab::nil) // x] \\body//_(lab::nil) is result.
   Proof.
-    intros. induction H; subst.
-    - rewrite H0. simpl. auto.
-    - simpl. simpl in H0. auto.
-    - simpl. simpl in H0. inversion H0; subst.
-      rewrite H1. rewrite H1. auto.
-    - simpl in *. constructor; auto.
-      apply IHsubsti. inversion H0.
-      congruence.
-    - simpl in *.
-      constructor.
-      + apply IHsubsti1. inversion H0. congruence.
-      + apply IHsubsti2. inversion H0. congruence.
-    - simpl in *. auto.
-    - simpl in *. auto.
-    - simpl in *.
-      constructor.
-      + apply IHsubsti1. inversion H0. congruence.
-      + apply IHsubsti2. inversion H0. congruence.
-      + apply IHsubsti3. inversion H0. congruence.
-    - simpl in *. destruct (sec_class_eq_dec class lab).
-      subst.
-      + inversion H0.
-      + constructor. apply IHsubsti. congruence.
+    intros. induction H; subst; try (simpl in *; auto).
+    - rewrite H0. constructor.
+    - inversion H0. repeat (rewrite H1). constructor.
+    - constructor; try assumption. apply IHsubsti. 
+      inversion H0. congruence.
     - constructor.
-  Qed.
+      + apply IHsubsti1. inversion H0; congruence.
+      + apply IHsubsti2. inversion H0; congruence.
+    - constructor.
+      + apply IHsubsti1. inversion H0; congruence.
+      + apply IHsubsti2. inversion H0; congruence.
+      + apply IHsubsti3. inversion H0; congruence.
+    - destruct (sec_class_eq_dec class lab) as [eq | neq].
+      + discriminate H0.
+      + constructor. apply IHsubsti.
+        inversion H0; congruence.
+     Qed.
 
 (* Stability single step incorrectly stated & proven *)
   Lemma stabilitysinglestep_tooweak : forall e f lab,
@@ -735,16 +720,14 @@ Module STLC.
         inversion H1; subst. congruence.
   Qed.
 
-  (*
-  Lemma canstepbeforepruning : forall e e' lab,
-    e -->* e' ->
-    \\ e //_(lab::nil) -->* \\ e' //_(lab::nil).
+(* Pruning a substitution result is the same as pruning the arg and body before substituting. *)
+  Lemma prunesubst_commute : forall lab v x body result,
+    [v // x] body is result ->
+    [(prune_single lab v) // x] (prune_single lab body) is (prune_single lab result).
   Proof.
-    intros. induction H.
-    - constructor.
-    - admit.
-  Admitted.
-  *)
+    intros. induction H; subst; try (simpl; auto).
+    destruct (sec_class_eq_dec class lab); auto.
+  Qed.
 
 (* Stability single step correctly stated *)
   Lemma stabilitysinglestep : forall e f lab,
@@ -753,15 +736,32 @@ Module STLC.
     \/
     (\\ f //_(lab :: nil) << \\ e //_(lab::nil))).
   Proof.
-    (* induction on the expression or stepping? *)
-    intros. generalize dependent f. induction e; intros.
-    - inversion H.
-    - inversion H; subst.
-      + admit.
-      + admit.
-    + 
-  Admitted.
-
+    intros. induction H.
+    - left. simpl. apply multi_R. constructor.
+      apply prunesubst_commute; auto.
+    - destruct IHstep as [L | R].
+      + left. simpl in *. apply bodystepsappsteps. auto.
+      + right. simpl in *. constructor; auto.
+    - left. simpl. apply multi_R. constructor.
+    - left. simpl. apply multi_R. constructor.
+    - destruct IHstep as [L | R].
+      + left. simpl in *. apply condstepsteststeps. auto.
+      + right. simpl in *. constructor; auto.
+    - simpl. destruct (sec_class_eq_dec class lab) as [eq | neq].
+      + right. constructor.
+      + left. apply multi_R. constructor.
+    - simpl. destruct (sec_class_eq_dec class lab) as [eq | neq].
+      + right. constructor.
+      + left. apply multi_R. constructor.
+    - simpl.
+      destruct (sec_class_eq_dec class lab) as [eq | neq].
+      left. constructor.
+      destruct IHstep.
+      + simpl in H0. left.
+        apply markedbodstepstermsteps. auto.
+      + right. simpl in *.
+        constructor; auto.
+  Qed.
 
 (* Stability fully stated multiple labels *)
   Lemma stability : forall e f labs,
@@ -790,16 +790,8 @@ Module STLC.
       + eapply multi_trans.
         * apply L.
         * apply IHmulti; auto.
-      + inversion R; subst.
-        * rewrite prunesinglelist.
-          rewrite <- H4.
-          rewrite <- prunesinglelist.
-          apply IHmulti; auto.
-        * admit.
-  Admitted.
-
-
-
+      + eapply monotonicity; eauto.
+  Qed.
 End STLC.
 
 
