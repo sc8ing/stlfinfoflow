@@ -1,5 +1,34 @@
-(** * Section Title Test *)
-(** alsdfjalksdfjklajsfdlkjl *)
+(** * Formally Prooving Validity for Type-Based Information Flow  *)
+
+(** ** Abstract *)
+(** Safely securing data is always a priority for systems that work with sensitive information. There are numerous ways to protect the integrity of data and manage the permissions as to how it can be accessed, but all of these rely on the programmer to correctly implement, and the success of this task can become difficult to ensure as a project grows. Information flow analysis provides a means to formally guarantee certain restraints surrounding information flow are met. By using a type-based approach, these assertions can be built in to the programming language's type system, thus removing the need for external analysis and providing compile-time checking. The various techniques for proving these assertions are sound have been well documented. The goal of this thesis is to formally verify the integrity of one of these proofs using the automated proof management system Coq.
+*)
+
+
+(** ** Background *)
+
+(** *** Information Flow *)
+(** When a program is executed, bits of data are stored in various regions of the computer's memory. Some of this information may be of greater importance than the rest, but still managed by the same program. One example use case is a voting system in which it must be ensured that the development of publicly-available aggregate data of candidate totals cannot be used to recover information about who voted. (TODO better example). In such cases it's not only critical to ensure that the program does not accidentally leak sensitive information to low-security areas, but also that implicit information regarding the structure or content of sensitive data remains solely in high-security areas as well.
+
+  For example, a simple imperative program with high-security data in some variable [x] and low-security data in [y] of the following form may not explicitly copy sensitive data to a low-security area, but it does reveal information about the contents of this data, which an attacker may or may not eventually accumulate enough of in a real-world scenario to deduce significant details about the contents of [x].
+  
+  x := getSecretNumber()
+  y := 2
+  if x > 5
+    y := y - 1
+  else
+    y := y + 1 *)
+
+(* Various conceptions and degrees of information flow have been explored in the literature. For the purposes of this paper, all expressions in a language can be assigned a security level of either [High] or [Low]. The assertion that the flow of information in a program is secure can then be stated as below:
+
+  For any two sets of high-security inputs [H1], [H2] and low-security input [L], the low-security result of executing a program with [H1] and [L] as its initial states is identical to executing it with [H2] and [L] as its initial states.
+
+This proposition is referred to as non-interference. *)
+
+
+(** *** The Proof Assistant Coq *)
+(**  *)
+
 
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Strings.String.
@@ -35,19 +64,6 @@ Module STLC.
     | marked : sec_class -> exp -> exp
     | hole.
   
-  (*
-  Definition exp_eq_dec :
-    forall (x y : exp), { x = y } + { x <> y }.
-  Proof.
-    decide equality.
-    - destruct (string_dec s s0) eqn:E.
-      + left. auto.
-      + right. auto.
-    - admit.
-  Admitted.
-(*  Defined. *)
-*)
-
   Inductive protected (l : sec_class) : data_type -> Prop :=
     | P_bool :
         protected l Bool
