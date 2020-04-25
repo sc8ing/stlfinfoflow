@@ -1,3 +1,4 @@
+(* TODO: specific case walkthroughs in important coq proofs *)
 
 (** * Abstract *)
 
@@ -377,6 +378,11 @@ is the ultimate goal. *)
 
 (** ** Lemmas and Useful Propostions *)
 
+(** The following are the building blocks off which the final proof
+will be constructed. *)
+
+(** *** Hole Definitions and Relations *)
+
 (** Holes are pieces of expressions that, in essence, do not exist or
 have been removed for some reason. In the context of this paper,
 holes are introduced into expressions when they are stripped of all
@@ -458,8 +464,23 @@ and none of its subexpressions are holes. *)
         noholes (marked class body).
 (* end hide *)
 
-(* left off at *)
 
+(** *** Hole Lemmas *)
+
+(** This section contains several lemmas regarding holes and their
+relationships to other expressions. *)
+
+(** **** holyval_meansval *)
+
+(** Since the [<<] relation requires the congruence of both
+arguments' ASTs, any proposition of the form [v << v'] where [v] is
+a value entails that [v'] is also a value. The proof procedes by
+induction on the [value] proposition. Informally, most of the cases
+follow directly from the fact that the [holier] relation requires
+both arguments to be congruent and therefore the premise [v1 << v2]
+requires [v2] to be a value as well. The inductive hypothesis is used
+for expressions of the form [marked class body] to show that the
+bodies of both marks must be the same. *)
 
   Lemma holyval_meansval : forall v1 v2,
     value v1 ->
@@ -468,38 +489,66 @@ and none of its subexpressions are holes. *)
   Proof.
     intros. generalize dependent v2.
     induction H; intros; inversion H0; try constructor.
-    - subst. assumption.
+    - assumption.
     - subst. apply IHvalue. assumption.
   Qed.
 
+(** **** holier_abs_inv *)
+
+(** For any abstraction [abs x T body] holier than an another
+expression [e'], there must exist some [body'] such that [body <<
+body'] and [abs x T body << abs x' T' body']. This lemma and its
+proof may seem rather trivial. Most of the merit behind it comes from
+the simplification it provides later on in the proof of
+monotonicity.
+
+As a side note, this proof is a rather good example of the degree to
+which tactics can automate the more tedious aspects of proofs. For
+a more complex language with a wide variety of expressions, doing
+induction on an expression as in the first case of the below proof
+would be exceedingly tedious to check formally since the number of
+cases corresponds to the number of forms for expressions. In the
+following example, <<"; eauto">> amounts to saying "most of the cases
+follow directly from the assumption" and removes the need to
+explicitly iterate through them. *)
 
   Lemma holier_abs_inv : forall x T body e',
     (abs x T body) << e' ->
     exists body', body << body' /\ e' = (abs x T body').
   Proof.
     intros. inversion H; subst.
-    induction body; eexists; eauto.
-    exists body'. auto.
+    - induction body; eexists; eauto.
+    - exists body'. auto.
   Qed.
 
+(** **** noholes_app_body *)
+
+(** If the result of a substitution has no holes, then the expression
+into which the substituion was done ([body]) must not have had any
+holes to begin with. Note that it's not necessarily true that the
+term substituted in ([arg]) has no holes, since the substitution
+relation as defined does not require the substitution variable ([x])
+to exists in [body] - in other words, a hole could be subbed in and
+never used.
+
+The proof proceeds by induction on the substitution relation. The
+majority of cases proceed by using the [noholes] assumption to derive
+that subexpressions in the result must also not have holes and
+therefore the inductive hypothesis applies. *)
 
   Lemma noholes_app_body : forall x body arg f,
   noholes f ->
   [arg // x] body is f ->
   noholes body.
   Proof.
-    intros. induction H0.
+    intros. induction H0; try assumption.
     - econstructor.
-    - assumption.
-    - assumption.
     - inversion H; subst. apply IHsubsti in H3.
       apply NH_abs. assumption.
     - inversion H; subst.
       apply IHsubsti1 in H2.
       apply IHsubsti2 in H3.
       apply NH_app; assumption.
-    - assumption.
-    - assumption.
     - inversion H; subst.
       apply IHsubsti1 in H3.
       apply IHsubsti2 in H4.
@@ -508,8 +557,17 @@ and none of its subexpressions are holes. *)
     - inversion H; subst.
       apply IHsubsti in H2.
       apply NH_marked. assumption.
-    - inversion H.
   Qed.
+
+  
+(** **** noholes_app_arg_orunused *)
+
+(** As mentioned in the above clarification for [noholes_app_body],
+similar judgements can be made about the substituted value in
+a substitution if the result has no holes. The only difference is
+that the additional possibility of this value being unused in the
+body of the substitution must be accounted for and makes this lemma
+slightly weaker as a consequence. The proof proceeds similarly by induction over the substitution. *)
 
   Lemma noholes_app_arg_orunused : forall x body arg f,
   noholes f ->
@@ -550,8 +608,7 @@ and none of its subexpressions are holes. *)
       destruct H4 as [nht2 | t2unused]. auto.
       destruct H5 as [nht3 | t3unused]. auto.
       auto.
-    - (* same *)
-      inversion H; subst.
+    - inversion H; subst.
       specialize H2 as H2'.
       apply IHsubsti in H2.
       destruct H2 as [nh | unused]; auto.
