@@ -1,3 +1,7 @@
 #!/bin/bash
 
-coqdoc Stlc.v --html --no-index -d ./doc
+coqdoc Stlc.v --latex \
+    --no-index \
+    -d ./doc \
+    --title 'Formally Proving Validity for Type-Based Information Flow' \
+    -toc

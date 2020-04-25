@@ -1,35 +1,111 @@
-(** * Formally Prooving Validity for Type-Based Information Flow  *)
 
-(** ** Abstract *)
-(** Safely securing data is always a priority for systems that work with sensitive information. There are numerous ways to protect the integrity of data and manage the permissions as to how it can be accessed, but all of these rely on the programmer to correctly implement, and the success of this task can become difficult to ensure as a project grows. Information flow analysis provides a means to formally guarantee certain restraints surrounding information flow are met. By using a type-based approach, these assertions can be built in to the programming language's type system, thus removing the need for external analysis and providing compile-time checking. The various techniques for proving these assertions are sound have been well documented. The goal of this thesis is to formally verify the integrity of one of these proofs using the automated proof management system Coq.
+(** * Abstract *)
+
+(** Safely securing data is always a priority for systems that work
+with sensitive information. There are numerous ways to protect the
+integrity of data and manage the permissions as to how it can be
+accessed, but all of these rely on the programmer to correctly
+implement, and the success of this task can become difficult to
+ensure as a project grows. Information flow analysis provides a means
+to formally guarantee certain restraints surrounding information flow
+are met. By using a type-based approach, these assertions can be
+built in to the programming language's type system, thus removing the
+need for external analysis and providing compile-time checking. The
+various techniques for proving these assertions are sound have been
+well documented. The goal of this thesis is to formally verify the
+integrity of one of these proofs using the automated proof management
+system Coq.
 *)
 
 
-(** ** Background *)
+(** * Background *)
 
-(** *** Information Flow *)
-(** When a program is executed, bits of data are stored in various regions of the computer's memory. Some of this information may be of greater importance than the rest, but still managed by the same program. One example use case is a voting system in which it must be ensured that the development of publicly-available aggregate data of candidate totals cannot be used to recover information about who voted. (TODO better example). In such cases it's not only critical to ensure that the program does not accidentally leak sensitive information to low-security areas, but also that implicit information regarding the structure or content of sensitive data remains solely in high-security areas as well.
+(** ** Information Flow *)
 
-  For example, a simple imperative program with high-security data in some variable [x] and low-security data in [y] of the following form may not explicitly copy sensitive data to a low-security area, but it does reveal information about the contents of this data, which an attacker may or may not eventually accumulate enough of in a real-world scenario to deduce significant details about the contents of [x].
+(** When a program is executed, bits of data are stored in various
+regions of the computer's memory. Some of this information may be of
+greater importance a voting system in which it must be ensured that
+the development of publicly-available aggregate data of candidate
+totals cannot be used to recover information about who voted. (TODO
+better example). In such cases it's not only critical to ensure that
+the program does not accidentally leak sensitive information to
+low-security areas, but also that implicit information regarding the
+structure or content of sensitive data remains solely in
+high-security areas as well.
+
+For example, a simple imperative program with high-security data in
+some variable [x] and low-security data in [y] of the following form
+may not explicitly copy sensitive data to a low-security area, but it
+does reveal information about the contents of this data, which an
+attacker may or may not eventually accumulate enough of in
+a real-world scenario to deduce significant details about the
+contents of [x].
   
+<<
   x := getSecretNumber()
   y := 2
   if x > 5
     y := y - 1
   else
-    y := y + 1 *)
+    y := y + 1
+>>
+*)
 
-(* Various conceptions and degrees of information flow have been explored in the literature. For the purposes of this paper, all expressions in a language can be assigned a security level of either [High] or [Low]. The assertion that the flow of information in a program is secure can then be stated as below:
-
-  For any two sets of high-security inputs [H1], [H2] and low-security input [L], the low-security result of executing a program with [H1] and [L] as its initial states is identical to executing it with [H2] and [L] as its initial states.
+(** Various conceptions and degrees of information flow have been
+explored in the literature. For the purposes of this paper, all
+expressions in a language can be assigned a security level of either
+[High] or [Low]. The assertion that the flow of information in
+a program is secure can then be stated as below: For any two sets of
+high-security inputs [H1], [H2] and low-security input [L], the
+low-security result of executing a program with [H1] and [L] as its
+initial states is identical to executing it with [H2] and [L] as its
+initial states.
 
 This proposition is referred to as non-interference. *)
 
 
-(** *** The Proof Assistant Coq *)
-(**  *)
+(** ** The Proof Assistant Coq *)
+
+(** Coq is an interactive theorem prover used to assist in formal
+proofs in a logical framework. It includes both a custom programming
+language Gallina with advanced implementations of type theory and
+a language for constructing formal, machine-checked proofs - often
+regarding properties of a program, but also used for intricate
+mathematical proofs.
+
+Part of what makes a system like Coq so powerful is the guarantees it
+can provide for accuracy and correctness. Not only does the
+specification of the language itself have the weak normalization
+property (meaning programs cannot diverge), but it also allows for
+complicated, multifaceted arguments to be constructed with many
+parts. As such, it lends itself naturally to areas of computer
+science where extreme rigor is necessary, such as encryption or
+compiler verification. Areas related to the effectiveness of security
+techniques, such as information flow, are also strong candidates for
+machine-checked proofs in order to increase confidence in the
+program. *)
+ 
+
+(** * General Structure of the Proof *)
+
+(** The formal proof for type-based information flow presented here
+is largely based off the work of François Pottier and his
+presentation at The National Institute for Research in Computer
+Science and Automation (INRIA). (TODO: link?) Some modifications have
+been made for practical reasons – such as the decision not to use
+evalutation contexts and the inclusion of different types in the
+langauge – but these are unimportant to the overall goal and the
+essence of the conclusion is the same. *)
 
 
+(** * The Language *)
+
+(** We begin by specifying a simple programming language in which to
+construc  *)
+
+
+
+(* begin hide *)
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Strings.String.
 From STLCIF Require Import Maps.
@@ -40,6 +116,7 @@ Require Import Bool.
 
 
 Module STLC.
+(* end hide *)
   Inductive data_type : Type :=
     | Bool  : data_type
     | Arrow : data_type -> data_type -> data_type.
@@ -611,7 +688,6 @@ Module STLC.
 (** [monotonicity] can now be stated relying on the assumption that [f] has no holes. Since [monotonicity'] gives as a result that [f << f'], the only way this could be possible is if [f = f'] (as was proven in the [noholes_holier_means_eq] lemma). Formally, the final [monotonicity] theorem would be stated the same as before. *)
   
 (**  Unfortunately, the problems related to the weakness of [monotonicity_single_step] as originally stated were encountered far too late in the semester to allow for time to redo the proofs. *)
-
 
 
 (******************************************************************)
