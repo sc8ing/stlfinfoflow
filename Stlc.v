@@ -119,8 +119,10 @@ Require Import Bool.
 Module STLC.
 (* end hide *)
 
-(** The language contains only booleans as a fundamental data storage
-unit, along with two-argument functions. Expressions are similar to
+(** ** Syntax *)
+
+(** The language contains only booleans as a primitive data type
+, along with two-argument functions. Expressions are similar to
 simply-typed lambda calculus, with two notable additions: [hole] and
 [marked]. The latter is the purely-syntactical way for a programmer
 to mark an expression as belonging to one of two security classes,
@@ -132,21 +134,21 @@ below. *)
     | Bool  : data_type
     | Arrow : data_type -> data_type -> data_type.
 
-(** begin hide *)
+(* begin hide *)
   Definition data_type_eq_dec :
     forall (x y : data_type), { x = y } + { x <> y }.
   Proof. decide equality. Defined.
-(** end hide *)
+(* end hide *)
 
   Inductive sec_class : Type :=
     | High : sec_class
     | Low : sec_class.
 
-(** begin hide *)
+(* begin hide *)
   Definition sec_class_eq_dec :
     forall (x y : sec_class), { x = y } + { x <> y }.
   Proof. decide equality. Defined.
-(** end hide *)
+(* end hide *)
 
   Inductive exp : Type :=
     | var : string -> exp
@@ -158,7 +160,7 @@ below. *)
     | marked : sec_class -> exp -> exp
     | hole.
 
-(** begin hide *)
+(* begin hide *)
   Open Scope string_scope.
   Definition x := "x".
   Definition y := "y".
@@ -182,7 +184,15 @@ below. *)
 
   Notation notB := (abs x Bool (test (var x) fls tru)).
 
-(** end hide *)
+(* end hide *)
+
+
+(** ** Semantics *)
+
+(** In order to differentiate between a program that "gets stuck" and
+one that has terminated successfully, the notion of a [value]
+proposition is introduced. Values are expressions that are well-typed
+but cannot take a step. *)
 
   Inductive value : exp -> Prop :=
     | v_abs :
@@ -196,7 +206,14 @@ below. *)
         forall class val,
         value val -> value (marked class val).
 
-  Hint Constructors value.
+(* begin hide *) 
+  Hint Constructors value.  (* end hide *)
+
+(** Syntax for subsitution semantics is introduced in the form [[v
+// x] e is e'] where [v], [e] and [e'] are expressions and [x] is
+a variable that may or may not exist in [e]. The statement can be
+read as "the result of subsituting [v] for [x] in [e] yields
+[e']". *)
 
   Reserved Notation "'[' v '//' x ']' e 'is' r" (at level 40).
   Inductive substi (x : string) (s : exp) : exp -> exp -> Prop :=
@@ -237,7 +254,17 @@ below. *)
       where "'[' v '//' x ']' e 'is' r" := (substi x v e r)
   .
 
+  (* begin hide *)
   Hint Constructors substi.
+  (* end hide *)
+
+(** The reduction of expressions in the language is defined using
+small-step semantics. All well-typed expressions can either take
+a step or are values. This claim is proven formally here later on in
+the typical form of progress and preservation. For clarity, the 
+notation [e --> e'] is introduced to mean that the expression [e]
+steps to [e'] in exactly one step. [e -->* e'] is then used to state
+a multistep relation between [e] and [e'] or zero or more steps. *)
 
   Reserved Notation "t1 '-->' t2" (at level 40).
   Inductive step : exp -> exp -> Prop :=
@@ -279,6 +306,7 @@ below. *)
 
     where "t1 '-->' t2" := (step t1 t2).
 
+(* begin hide *)
   Hint Constructors step.
 
   Notation multistep := (multi step).
@@ -288,6 +316,18 @@ below. *)
   Definition context := partial_map data_type.
 
   Reserved Notation "Gamma '|-' t '\in' T" (at level 40).
+(* end hide *)
+
+(** ** Static Typing *)
+
+(** The following relation is defined to type an expression. Any
+expression not satisfying the requirements of one of the constructors
+is ill-typed and therefore illegal. Constraining the amount of types
+in the language keeps this specification relatively short.  Following
+convention as closely as possible within the limitations of Coq's
+syntactical restraints, the notation [Gamma |- e \in T] is used to
+        signify that expression [e] is of type [T] under a typing
+        context [Gamma]. *)
 
   Inductive has_dtype : context -> exp -> data_type -> Prop :=
     | T_Var : forall Gamma x T,
@@ -317,12 +357,46 @@ below. *)
     | T_Marked : forall Gamma class e T,
         Gamma |- e \in T ->
         Gamma |- marked class e \in T
-
     where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
 
+(* begin hide *)
   Hint Constructors has_dtype.
 
   Reserved Notation "a << b" (at level 40).
+(* end hide *)
+
+(** * The Proofs *)
+
+(** The given definitions of the language used here's syntax, typing
+rules, and small-step execution semantics is sufficient to prove the
+soundness of its information flow typing with marked
+expressions. A variety of propositions and lemmas used to construct
+the proof are first introduced, followed by two larger theorems that,
+together, form the majority of the proof for non-interference, which
+is the ultimate goal. *)
+
+(** ** Lemmas and Useful Propostions *)
+
+(** Holes are pieces of expressions that, in essence, do not exist or
+have been removed for some reason. In the context of this paper,
+holes are introduced into expressions when they are stripped of all
+data consising of a given security class. The notion of an incomplete
+or "holey" expression and the relation between expressions with
+    different numbers of holes provide a means of redaction of terms
+    that would violate information flow typing.
+
+An expression [e] is holier than an expression [e'] (written [e <<
+e']) if the ASTs of each expression are congruent (i.e. both are
+variables, abstractions, or some other possible expression) and all
+subexpressions of [e] are holier than the corresponding ones of
+[e']. The requirement for expressions to have congruent ASTs is
+removed for holes – a hole is by definition holier than any other
+expression. Note that the [<<] relation is reflexive as well.
+
+Also given is the proposition [noholes] (not shown here). As would be
+expected, an expression [e] satifies [noholes] if it is not a hole
+and none of its subexpressions are holes. *)
+
   Inductive holier : exp -> exp -> Prop :=
     | H_refl :
         forall e,
@@ -357,8 +431,8 @@ below. *)
 
     where "a << b" := (holier a b).
 
+(* begin hide *)
   Hint Constructors holier.
-
 
   Inductive noholes : exp -> Prop :=
     | NH_var : forall s,
@@ -382,6 +456,9 @@ below. *)
     | NH_marked : forall class body,
         noholes body ->
         noholes (marked class body).
+(* end hide *)
+
+(* left off at *)
 
 
   Lemma holyval_meansval : forall v1 v2,
