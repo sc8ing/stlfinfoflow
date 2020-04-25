@@ -100,10 +100,12 @@ essence of the conclusion is the same. *)
 
 (** * The Language *)
 
-(** We begin by specifying a simple programming language in which to
-construc  *)
-
-
+(** We begin by specifying a simple programming language about which
+to construct the proof. For the purposes of clarity, it is rather
+bare bones. More involved languages for practical use in the real
+world would nevertheless follow the same fundamental structure,
+simply with more nuances. The critical detail of whatever language is
+used is that it must be typed. (TODO: is this true? more details). *)
 
 (* begin hide *)
 Set Warnings "-notation-overridden,-parsing".
@@ -114,22 +116,37 @@ Require Import Coq.Strings.String.
 Require Import Ascii.
 Require Import Bool.
 
-
 Module STLC.
 (* end hide *)
+
+(** The language contains only booleans as a fundamental data storage
+unit, along with two-argument functions. Expressions are similar to
+simply-typed lambda calculus, with two notable additions: [hole] and
+[marked]. The latter is the purely-syntactical way for a programmer
+to mark an expression as belonging to one of two security classes,
+either [High] or [Low]. Types, security classes, and expressions are
+defined straightforwardly in Coq as the inductive data types shown
+below. *)
+
   Inductive data_type : Type :=
     | Bool  : data_type
     | Arrow : data_type -> data_type -> data_type.
+
+(** begin hide *)
   Definition data_type_eq_dec :
     forall (x y : data_type), { x = y } + { x <> y }.
   Proof. decide equality. Defined.
+(** end hide *)
 
   Inductive sec_class : Type :=
     | High : sec_class
     | Low : sec_class.
+
+(** begin hide *)
   Definition sec_class_eq_dec :
     forall (x y : sec_class), { x = y } + { x <> y }.
   Proof. decide equality. Defined.
+(** end hide *)
 
   Inductive exp : Type :=
     | var : string -> exp
@@ -140,15 +157,8 @@ Module STLC.
     | test : exp -> exp -> exp -> exp
     | marked : sec_class -> exp -> exp
     | hole.
-  
-  Inductive protected (l : sec_class) : data_type -> Prop :=
-    | P_bool :
-        protected l Bool
-    | P_arrow :
-        forall t1 t2,
-        protected l t2 ->
-        protected l (Arrow t1 t2).
 
+(** begin hide *)
   Open Scope string_scope.
   Definition x := "x".
   Definition y := "y".
@@ -171,6 +181,8 @@ Module STLC.
   Notation k := (abs x Bool (abs y Bool (var x))).
 
   Notation notB := (abs x Bool (test (var x) fls tru)).
+
+(** end hide *)
 
   Inductive value : exp -> Prop :=
     | v_abs :
@@ -304,7 +316,6 @@ Module STLC.
 
     | T_Marked : forall Gamma class e T,
         Gamma |- e \in T ->
-(*        (protected class dtype) -> *)
         Gamma |- marked class e \in T
 
     where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
