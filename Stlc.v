@@ -208,7 +208,8 @@ but cannot take a step. *)
         value val -> value (marked class val).
 
 (* begin hide *) 
-  Hint Constructors value.  (* end hide *)
+  Hint Constructors value.
+(* end hide *)
 
 (** Syntax for subsitution semantics is introduced in the form [[v
 // x] e is e'] where [v], [e] and [e'] are expressions and [x] is
@@ -521,7 +522,7 @@ explicitly iterate through them. *)
     - exists body'. auto.
   Qed.
 
-(** **** noholes_app_body *)
+(** **** subst_noholes *)
 
 (** If the result of a substitution has no holes, then the expression
 into which the substituion was done ([body]) must not have had any
@@ -536,38 +537,38 @@ majority of cases proceed by using the [noholes] assumption to derive
 that subexpressions in the result must also not have holes and
 therefore the inductive hypothesis applies. *)
 
-  Lemma noholes_app_body : forall x body arg f,
-  noholes f ->
-  [arg // x] body is f ->
-  noholes body.
+  Lemma subst_noholes : forall x body arg result,
+    [ arg // x ] body is result ->
+    noholes result ->
+    noholes body.
   Proof.
-    intros. induction H0; try assumption.
-    - econstructor.
-    - inversion H; subst. apply IHsubsti in H3.
-      apply NH_abs. assumption.
-    - inversion H; subst.
-      apply IHsubsti1 in H2.
-      apply IHsubsti2 in H3.
-      apply NH_app; assumption.
-    - inversion H; subst.
-      apply IHsubsti1 in H3.
-      apply IHsubsti2 in H4.
-      apply IHsubsti3 in H5.
-      apply NH_test; assumption.
-    - inversion H; subst.
-      apply IHsubsti in H2.
-      apply NH_marked. assumption.
+    intros. induction H; try constructor; auto.
+    - inversion H0; subst. auto.
+    - inversion H0; subst.
+      apply IHsubsti in H3. auto.
+    - inversion H0; subst.
+      apply IHsubsti1 in H4. auto.
+    - inversion H0; subst.
+      apply IHsubsti2 in H5. auto.
+    - inversion H0; subst.
+      apply IHsubsti1 in H6. auto.
+    - inversion H0; subst.
+      apply IHsubsti2 in H7. auto.
+    - inversion H0; subst.
+      apply IHsubsti3 in H8. auto.
+    - inversion H0; subst.
+      apply IHsubsti in H2. auto.
   Qed.
-
   
 (** **** noholes_app_arg_orunused *)
 
-(** As mentioned in the above clarification for [noholes_app_body],
+(** As mentioned in the above clarification for [subst_noholes],
 similar judgements can be made about the substituted value in
 a substitution if the result has no holes. The only difference is
 that the additional possibility of this value being unused in the
 body of the substitution must be accounted for and makes this lemma
-slightly weaker as a consequence. The proof proceeds similarly by induction over the substitution. *)
+slightly weaker as a consequence. The proof proceeds similarly by
+induction over the substitution. *)
 
   Lemma noholes_app_arg_orunused : forall x body arg f,
   noholes f ->
@@ -614,6 +615,16 @@ slightly weaker as a consequence. The proof proceeds similarly by induction over
       destruct H2 as [nh | unused]; auto.
     - inversion H.
   Qed.
+
+(** **** noholes_holier_means_eq *)
+
+(** The way reflexivity is defined for the holier relation means that
+any expression without holes [e] that's holier than another
+expression [e'] must be equivalent to [e']. The proof proceeds by
+induction on the assertion that [e] has no holes. The congruence of
+the [<<] relation then gives the equivalence of [e] to [e'] for
+expressions that are values. The inductive hypothesis serves to show
+equivalence for expressions with subexpressions. *)
   
   Lemma noholes_holier_means_eq : forall e e',
     noholes e ->
@@ -639,29 +650,12 @@ slightly weaker as a consequence. The proof proceeds similarly by induction over
       apply IHnoholes in H4; subst; auto.
   Qed.
 
-  Lemma subst_noholes : forall x body arg result,
-    [ arg // x ] body is result ->
-    noholes result ->
-    noholes body.
-  Proof.
-    intros. induction H; try constructor; auto.
-    - inversion H0; subst. auto.
-    - inversion H0; subst.
-      apply IHsubsti in H3. auto.
-    - inversion H0; subst.
-      apply IHsubsti1 in H4. auto.
-    - inversion H0; subst.
-      apply IHsubsti2 in H5. auto.
-    - inversion H0; subst.
-      apply IHsubsti1 in H6. auto.
-    - inversion H0; subst.
-      apply IHsubsti2 in H7. auto.
-    - inversion H0; subst.
-      apply IHsubsti3 in H8. auto.
-    - inversion H0; subst.
-      apply IHsubsti in H2. auto.
-  Qed.
 
+
+
+(** *** Stepping Lemmas *)
+(* TODO: mention the lack of an evaluation context making these
+necessary *)
 
   Lemma bodystepsappsteps : forall body arg body',
     body -->* body' ->
