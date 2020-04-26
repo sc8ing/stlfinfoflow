@@ -718,7 +718,27 @@ subexpression. This proof is also the same. *)
 (******************************************************************)
 (** * Monotonicity *)
 
-(* Monotonicity single step *)
+(** The above set of lemmas are sufficient to prove
+monotonicity, which is the property that any time an expression [e]
+that's holier than an expression [e'] steps to an expression [f]
+containing no holes, [e'] must also eventually step to [f]. *)
+
+(** ** Single-step Monotonicity *)
+
+(** It should be mentioned at this point that a mistake was
+discovered in the approach to proving this theorem late along the
+process. What follows is a slightly weaker of the monotonicity
+theorem as stated above, since the first expression [e] must take
+exactly _one_ step to arrive at the common expression [f]. It was
+thought that proving the version with multi-step would be done by
+induction on the stepping relation [e -->* f], which is where this
+single-step lemma would come in. As will be shown, though, this
+approach is flawed. Nevertheless, it is worth walking through the
+structure of the below lemma. *) (* TODO: why? *)
+
+(** The proof begins with induction on the holier relation [e <<
+e']. *)
+
   Lemma monotonicity_single_step : forall e e' f,
     noholes f ->
     e << e' ->
