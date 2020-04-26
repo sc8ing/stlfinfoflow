@@ -799,18 +799,26 @@ that [e] (of the form [app body arg] can step to [f].
     At this stage we are left to show that [app bodye' arge' -->* app
     bodyf arge']. We use [bodystepsappsteps] to reduce this to
     showing that [bodye' -->* bodyf], which is given by the first
-    inductive hypothesis (*forall* f, noholes f *->* bodye <<-->>>
+    inductive hypothesis ( *forall* f, noholes f *->* bodye <<-->>>
     f *->* bodye' <<-->>> f).
 
   - Now assume the step from [e] to [f] was done by lifting the
     security class marking the application body up to the top
-    level. Then [f] is of the form [marked class (app bodyf argf)]
-    for some 
+    level. Then [f] is of the form [marked class (app bodyf argf)],
+    [bodyf = bodye], and [argf = arge]. Similarly to the proof
+    section immediately above, it can be derived from [noholes f],
+    these equivalences, and the [e << e'] assumption that [argf
+    = arge'] and [bodyf = bodye']. [app (marked class bodye') arge'
+    -->* marked class (app bodye' arge')] then becomes an instance of
+    the [step] lifting rule for applications.
 
-  - Since the [step] relation implements call-by-name semantics, it's
+  - The final case to be considered for the event that [e] is an
+    application is if [f] is the result of [e] stepping by
+    substitution of its argument.
+    
+    Since the [step] relation implements call-by-name semantics, it's
     possible that neither the body of the application nor its
     argument are fully reduced - they can be any expression at all.
-
 
 *)
 

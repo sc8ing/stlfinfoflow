@@ -84,7 +84,14 @@ science where extreme rigor is necessary, such as encryption or
 compiler verification. Areas related to the effectiveness of security
 techniques, such as information flow, are also strong candidates for
 machine-checked proofs in order to increase confidence in the
-program. *)
+program.
+
+The reader should keep in mind that, while the proofs given in this
+paper are written out in a conventional style, every step given is
+backed by the formal guarantees of the Coq theorem assistant in
+a machine-checked proof, which is ultimately what this paper is about
+and not merely the results of the proofs themselves, which were
+already believed to be true. *)
  
 
 (** * General Structure of the Proof *)
@@ -737,7 +744,83 @@ approach is flawed. Nevertheless, it is worth walking through the
 structure of the below lemma. *) (* TODO: why? *)
 
 (** The proof begins with induction on the holier relation [e <<
-e']. *)
+e']. Some of the cases are rather straightforward. *)
+
+(**
+
+- The reflexive case of [e << e'] is immediate; the expressions are
+  equivalent and obviously step to the same thing.
+
+- In the event that [e << e'] because [e] is a hole, an implicit
+  contradiction is assumed in the premises since holes don't step to
+  any expression under the [step] relation.
+
+- Abstractions are similar; since they're values, there's also
+  nothing for them to step to.
+
+- Marked expressions are only slightly more complex. Given the
+  stepping relation and the assumption that [marked class body -->
+  f], a few facts can be derived. First, it must be the case that
+  [body] steps to some other expression [body']. [f] must also be
+  a marked expression, so it is of the form [marked classf
+  bodyf]. Since the stepping relation gives no way for a security
+  class to be altered from the stepping of a subexpression, we can
+  further derive that [class = classf].
+
+  Showing that [e' -->* f] can now be rewritten as showing [marked
+  class body' -->* marked class bodyf']. Since [bodyf] can't have
+  holes, there's enough information to apply the inductive hypothesis
+  and get that [body' -->* bodyf]. The simple lemma
+  [markedbodstepstermsteps] then completes this section of the
+  proof. *)
+
+(** The proofs for cases where [e] and [e'] are [test] or [app]
+expressions are more involved, since the multiple step rules for
+these kinds of expressions give more possibilities as to how [e -->
+f]. While the proof may be rather long, most of the cases proceed
+fairly similarly to proof of the marked expression component. The
+more interesting case of applications stepping to the substitution
+result will be given in more detail, while the rest of the proofs are
+omitted for brevity. *)
+
+(** The application case proceeds by considering the possible ways
+that [e] (of the form [app body arg] can step to [f].
+
+  - Let us first examine the case where the body of the application
+    [e = app bodye arge] takes a step. Under this scenario, [f] must
+    be of the form [app bodyf argf] and, since only the body of [e]
+    took a step and not the argument, [argf = arge]. Since [e = app
+    bodye arge << app bodye' arge' = e'], it's necessary from the
+    definition of [holier] that [bodye << bodye'] and [arge <<
+    arge']. [noholes f] implies [noholes argf] and therefore [noholes
+    arge] by equivalence. [noholes_holier_means_eq] then yields [arge
+    = arge'].
+
+    At this stage we are left to show that [app bodye' arge' -->* app
+    bodyf arge']. We use [bodystepsappsteps] to reduce this to
+    showing that [bodye' -->* bodyf], which is given by the first
+    inductive hypothesis ( *forall* f, noholes f *->* bodye <<-->>>
+    f *->* bodye' <<-->>> f).
+
+  - Now assume the step from [e] to [f] was done by lifting the
+    security class marking the application body up to the top
+    level. Then [f] is of the form [marked class (app bodyf argf)],
+    [bodyf = bodye], and [argf = arge]. Similarly to the proof
+    section immediately above, it can be derived from [noholes f],
+    these equivalences, and the [e << e'] assumption that [argf
+    = arge'] and [bodyf = bodye']. [app (marked class bodye') arge'
+    -->* marked class (app bodye' arge')] then becomes an instance of
+    the [step] lifting rule for applications.
+
+  - The final case to be considered for the event that [e] is an
+    application is if [f] is the result of [e] stepping by
+    substitution of its argument.
+    
+    Since the [step] relation implements call-by-name semantics, it's
+    possible that neither the body of the application nor its
+    argument are fully reduced - they can be any expression at all.
+
+*)
 
   Lemma monotonicity_single_step : forall e e' f,
     noholes f ->
@@ -807,7 +890,15 @@ e']. *)
       apply markedbodstepstermsteps. assumption.
   Qed.
 
-(** An unfortunate problem arises when trying to use the [monotonicity_single_step] proven above to prove the full [monotonicity] lemma below: as it turns out, the assertion is simply too weak. When induction is done on the multistep relation from [e] to [f] (i.e. the [e -->* f] line), it becomes necessary to prove that there exists a middle expression [m] such that [e --> m] and [m -->* f]. However, there is no guarantee that this middle expression satisfies the [noholes] proposition and therefore the [monotonicity_single_step] lemma no longer applies. *)
+(** An unfortunate problem arises when trying to use the
+[monotonicity_single_step] proven above to prove the full
+[monotonicity] lemma below: as it turns out, the assertion is simply
+too weak. When induction is done on the multistep relation from [e]
+to [f] (i.e. the [e -->* f] line), it becomes necessary to prove that
+there exists a middle expression [m] such that [e --> m] and [m -->*
+f]. However, there is no guarantee that this middle expression
+satisfies the [noholes] proposition and therefore the
+[monotonicity_single_step] lemma no longer applies. *)
 
 (* Monotonicity fully stated original attempt *)
   Lemma monotonicity : forall e e' f,
@@ -824,7 +915,16 @@ e']. *)
       + apply IHmulti; auto.
   Admitted.
   
-(**  One approach that was considered for remedying this problem is to reverse the induction principle. Concretely speaking, we could instruct Coq to take the same approach as outlined above with the middle expression [m], but instead formulate logically equivalent goals of the form [e -->* m] and [m --> f]. This would solve the problem of ensuring that [m] steps to something satisfying [noholes], but ends up losing other information necessary to complete the proof, namely that the expression [m] that [e] steps to is still holier than the expression [m'] that [e'] steps to, since [monotonicity_single_step] holds as a premise that [e << f]. *)
+(**  One approach that was considered for remedying this problem is
+to reverse the induction principle. Concretely speaking, we could
+instruct Coq to take the same approach as outlined above with the
+middle expression [m], but instead formulate logically equivalent
+goals of the form [e -->* m] and [m --> f]. This would solve the
+problem of ensuring that [m] steps to something satisfying [noholes],
+but ends up losing other information necessary to complete the proof,
+namely that the expression [m] that [e] steps to is still holier than
+the expression [m'] that [e'] steps to, since
+[monotonicity_single_step] holds as a premise that [e << f]. *)
 
 (* Multistep induction reversal statement *)
   Lemma multi_ind_rev :
@@ -870,9 +970,16 @@ e']. *)
   Proof.
   Admitted.
 
-(** [monotonicity] can now be stated relying on the assumption that [f] has no holes. Since [monotonicity'] gives as a result that [f << f'], the only way this could be possible is if [f = f'] (as was proven in the [noholes_holier_means_eq] lemma). Formally, the final [monotonicity] theorem would be stated the same as before. *)
+
+(** [monotonicity] can now be stated relying on the assumption that
+[f] has no holes. Since [monotonicity'] gives as a result that [f <<
+f'], the only way this could be possible is if [f = f'] (as was
+proven in the [noholes_holier_means_eq] lemma). Formally, the final
+[monotonicity] theorem would be stated the same as before. *)
   
-(**  Unfortunately, the problems related to the weakness of [monotonicity_single_step] as originally stated were encountered far too late in the semester to allow for time to redo the proofs. *)
+(**  Unfortunately, the problems related to the weakness of
+[monotonicity_single_step] as originally stated were encountered far
+too late in the semester to allow for time to redo the proofs. *)
 
 
 (******************************************************************)
