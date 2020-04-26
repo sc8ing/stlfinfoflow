@@ -654,8 +654,24 @@ equivalence for expressions with subexpressions. *)
 
 
 (** *** Stepping Lemmas *)
+
+(** According to the smallstep rules for this language, several
+expressions with subexpressions step their subexpressions until they
+become values. While the expression as a whole has not completely
+changed shape, it has nevertheless made a step. The following few
+lemmas cover the cases for applications, conditionals ([test]s), and
+marked expressions *)
 (* TODO: mention the lack of an evaluation context making these
 necessary *)
+
+(** **** bodystepsappsteps *)
+
+(** Bodies of applications (essentially function bodies) are reduced
+as much as possible before the subtitution of the argument is
+made. Hence, if the body can take a step, the entire term can take
+a step. The proof is straightforward induction on the stepping
+relation between the body of the application and the expression is
+steps to. *)
 
   Lemma bodystepsappsteps : forall body arg body',
     body -->* body' ->
@@ -666,6 +682,11 @@ necessary *)
     - apply multi_step with (app y0 arg); auto.
   Qed.
 
+(** **** condstepsteststeps *)
+
+(* Conditionals are stepped until their condition reduces to
+a boolean value. The proof is almost identical to
+[bodystepsappsteps]. *)
 
   Lemma condstepsteststeps : forall cond cond' b1 b2,
     cond -->* cond' ->
@@ -675,6 +696,11 @@ necessary *)
     - constructor.
     - apply multi_step with (test y0 b1 b2); auto.
   Qed.
+
+(** **** markedbodstepstermsteps *)
+
+(** Sub-stepping also applies to marked expressions and their
+subexpression. This proof is also the same. *)
 
   Lemma markedbodstepstermsteps : forall class body body',
     body -->* body' ->
