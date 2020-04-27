@@ -732,6 +732,8 @@ containing no holes, [e'] must also eventually step to [f]. *)
 
 (** ** Single-step Monotonicity *)
 
+(** *** Misguided Attempt *)
+
 (** It should be mentioned at this point that a mistake was
 discovered in the approach to proving this theorem late along the
 process. What follows is a slightly weaker of the monotonicity
@@ -814,14 +816,42 @@ that [e] (of the form [app body arg] can step to [f].
 
   - The final case to be considered for the event that [e] is an
     application is if [f] is the result of [e] stepping by
-    substitution of its argument.
-    
-    Since the [step] relation implements call-by-name semantics, it's
-    possible that neither the body of the application nor its
-    argument are fully reduced - they can be any expression at all.
+    substitution of its argument.  Since the [step] relation
+    implements call-by-name semantics, it's possible that neither the
+    body of the application nor its argument are fully reduced - they
+    can be any expression at all, and therefore so can the result of
+    the substitution, [f]. By [holier_abs_inv] and the [e << e']
+    assumption, we know that [bodye << bodye'] and [e'] is an
+    abstraction of the form [abs x T bodye'].
 
+    Since the result of the substitution, [f], has no holes, either
+    [arge] has no holes, or [bodye] doesn't use the variable to
+    substitute in for. This deduction is captured in the
+    [noholes_app_arg_orunused] lemma from earlier. 
+
+    - First, the case of [noholes arge]. [noholes_holier_means_eq]
+      immediately gives [arge = arge']. We can also derive [noholes
+      bodye] by [subst_noholes]. Another use of
+      [noholes_holier_means_eq] and the assumption that [bodye <<
+      bodye'] finishes this case.
+
+    - Now the case where the argument to the substitution is
+      unused. We proceed similarly with applications of
+      [subst_noholes] and [noholes_holier_means_eq] to get that
+      [bodye] must not have holes and is equal to [bodye']. Under the
+      current set of assumptions, [e'] can only step to [f] via the
+      substitution rule. Since any substitution into [bodye'] is
+      going unused, [arge'] is irrelevant and [bodye = bodye'
+      = f]. This case reduces to showing that the step from [e'] to
+      [f] amounts to a discarding of the application's argument and
+      retaining the body. TODO: but how did we know that there would
+      only be one step between [e'] and [f] and choose to apply
+      multi_R earlier on?
+
+    This completes the proof of the [app] case.
 *)
 
+(* begin hide *)
   Lemma monotonicity_single_step : forall e e' f,
     noholes f ->
     e << e' ->
@@ -889,23 +919,27 @@ that [e] (of the form [app body arg] can step to [f].
       apply IHholier in H3; auto.
       apply markedbodstepstermsteps. assumption.
   Qed.
+(* end hide *)
 
-(** An unfortunate problem arises when trying to use the
-[monotonicity_single_step] proven above to prove the full
-[monotonicity] lemma below: as it turns out, the assertion is simply
-too weak. When induction is done on the multistep relation from [e]
-to [f] (i.e. the [e -->* f] line), it becomes necessary to prove that
-there exists a middle expression [m] such that [e --> m] and [m -->*
-f]. However, there is no guarantee that this middle expression
-satisfies the [noholes] proposition and therefore the
-[monotonicity_single_step] lemma no longer applies. *)
+(** *** Method Flaws and Future Fixes *)
 
-(* Monotonicity fully stated original attempt *)
+(** As mentioned previously, an unfortunate problem arises when
+trying to use the [monotonicity_single_step] proven above to prove
+the full [monotonicity] lemma below: as it turns out, the assertion
+is simply too weak. When induction is done on the multistep relation
+from [e] to [f] (i.e. the [e -->* f] line), it becomes necessary to
+prove that there exists a middle expression [m] such that [e --> m]
+and [m -->* f]. However, there is no guarantee that this middle
+expression satisfies the [noholes] proposition and therefore the
+[monotonicity_single_step] lemma no longer applies. Below is the
+statement for how monotonicity is stated in Coq. *)
+
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
+(* begin hide *)
   Proof.
     intros. generalize dependent e'.
     induction H1.
@@ -914,18 +948,20 @@ satisfies the [noholes] proposition and therefore the
     - intros. eapply monotonicity_single_step in H0.
       + apply IHmulti; auto.
   Admitted.
+(* end hide *)
   
 (**  One approach that was considered for remedying this problem is
 to reverse the induction principle. Concretely speaking, we could
-instruct Coq to take the same approach as outlined above with the
-middle expression [m], but instead formulate logically equivalent
-goals of the form [e -->* m] and [m --> f]. This would solve the
-problem of ensuring that [m] steps to something satisfying [noholes],
-but ends up losing other information necessary to complete the proof,
-namely that the expression [m] that [e] steps to is still holier than
-the expression [m'] that [e'] steps to, since
-[monotonicity_single_step] holds as a premise that [e << f]. *)
+take the same approach as outlined above with the middle expression
+[m], but instead formulate logically equivalent goals of the form [e
+-->* m] and [m --> f]. This would solve the problem of ensuring that
+[m] steps to something satisfying [noholes], but ends up losing other
+information necessary to complete the proof, namely that the
+expression [m] that [e] steps to is still holier than the expression
+[m'] that [e'] steps to, since [monotonicity_single_step] requires in
+its premises that [e << f]. *)
 
+(* begin hide *)
 (* Multistep induction reversal statement *)
   Lemma multi_ind_rev :
     forall (X : Type) (R : relation X) (P : X -> X -> Prop),
@@ -949,19 +985,28 @@ the expression [m'] that [e'] steps to, since
     - intros. eapply monotonicity_single_step in H0.
       + apply IHmulti; auto.
   Admitted.
+(* end hide *)
   
-(** The correct way to fix these issues involes restating [monotonicity_single_step] to remove the requirement that both [e] and [e'] step to the same expression. Such a lemma would look like this: *)
+(** The correct way to fix these issues involes restating
+[monotonicity_single_step] to remove the requirement that both [e]
+and [e'] step to the same expression. Additionally, it shouldn't yet
+be required that [f] not have holes. Such a lemma would look like
+this: *)
 
   Lemma monotonicity_single_step' : forall e e' f,
     e << e' ->
     e --> f ->
     exists f', e' -->* f' /\ f << f'.
+(* begin hide *)
   Proof.
   Admitted.
+(* end hide *)
 
-(** In other words, we slightly relax the requirements to allow for what [e'] steps to to be different from what [e] steps to, but must still have less holes ([f << f']).
-
-  A second intermediary lemma is then used to simplify the proof of the final [monotonicity] theorem where an [f'] term is introduced corresponding to its role in the above lemma. *)
+(** The conclusion is now slightly weaker, but contains the still
+useful addition that [f << f'] and compensates by relaxing the
+antecedents. A second intermediary lemma is then used to simplify the
+proof of the final [monotonicity] theorem where an [f'] term is
+introduced corresponding to its role in the above lemma. *)
   
   Lemma monotonicity' : forall e e' f,
     e << e' ->
@@ -971,15 +1016,16 @@ the expression [m'] that [e'] steps to, since
   Admitted.
 
 
-(** [monotonicity] can now be stated relying on the assumption that
-[f] has no holes. Since [monotonicity'] gives as a result that [f <<
-f'], the only way this could be possible is if [f = f'] (as was
-proven in the [noholes_holier_means_eq] lemma). Formally, the final
-[monotonicity] theorem would be stated the same as before. *)
+(** [monotonicity] now follows from the above two lemmas with the
+requirement of [f] not having holes. Since [monotonicity'] gives as
+a result that [f << f'], the only way this could be possible is if [f
+= f'] by [noholes_holier_means_eq], which is equivalent to the
+original statement of [monotonicity]. *)
   
 (**  Unfortunately, the problems related to the weakness of
 [monotonicity_single_step] as originally stated were encountered far
-too late in the semester to allow for time to redo the proofs. *)
+too late in the semester to allow for time to reconstruct the entire
+proofs in Coq, which is disappointing. *)
 
 
 (******************************************************************)
