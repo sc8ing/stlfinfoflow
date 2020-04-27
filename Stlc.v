@@ -364,11 +364,11 @@ syntactical restraints, the notation [Gamma |- e \in T] is used to
 rules, and small-step execution semantics is sufficient to prove the
 soundness of its information flow typing with marked
 expressions. A variety of propositions and lemmas used to construct
-the proof are first introduced, followed by two larger theorems that,
+the proof are first introduced, along with two larger theorems that,
 together, form the majority of the proof for non-interference, which
 is the ultimate goal. *)
 
-(** ** Lemmas and Useful Propostions *)
+(** ** Lemmas and Definitions For Monotonicity *)
 
 (** The following are the building blocks off which the final proof
 will be constructed. *)
@@ -1015,7 +1015,22 @@ proofs in Coq, which is disappointing. *)
 (******************************************************************)
 (** * Stability *)
 
-(* Pruning definitions and notation *)
+(** The second (and last) component leading to non-interference is
+what's referred to as stability. First, some terminology is
+introduced and several stepping-stone lemmas are proven. *)
+
+(** ** Lemmas and Definitions for Stability *)
+
+(** *** Pruning Definitions *)
+
+(** First, the notation [\\ e //_ labs] is introduced to symbolize
+the result of _pruning_ a list of labels (security classes) from an
+expression [e]. To prune an expression of a labeled security class
+[lab] is to replace all marked expressions [marked class body] where
+[class = lab] with holes. The replacement descends into
+subexpressions recursively. Concretely, the formal definitions in Coq
+are shown below for clarification. *)
+
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
     | app func arg =>
@@ -1040,18 +1055,15 @@ proofs in Coq, which is disappointing. *)
   Definition prune (allowed : list sec_class) (e : exp) : exp :=
     List.fold_left (fun e' lab => prune_single lab e') allowed e.
 
+(* begin hide *)
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
+(* end hide *)
 
-(* Pruning an abstraction is the same as pruning its body *)
-  Lemma appprunedescend : forall x T body labs,
-    \\ (abs x T body) //_ labs = (abs x T (\\body//_labs)).
-  Proof.
-    intros. generalize dependent body. induction labs; subst.
-    - simpl. reflexivity.
-    - simpl. intros. apply IHlabs.
-  Qed.
+(** *** subprunenoorder *)
 
-(* If the result of a substitution has none of a label, then pruning the body for that label beforehand doesn't affect the result *)
+(** If the result of a substitution has none of a label, then pruning
+the body for that label beforehand doesn't affect the result. *)
+
   Lemma subprunenoorder : forall v x body result lab,
     [v // x] body is result ->
     \\result//_(lab::nil) = result ->
@@ -1074,6 +1086,27 @@ proofs in Coq, which is disappointing. *)
       + constructor. apply IHsubsti.
         inversion H0; congruence.
      Qed.
+
+(** *** prunesubst_commute *)
+
+(** Pruning the result of a substitution is the same as pruning the
+argument and body before making the substitution. *)
+
+  Lemma prunesubst_commute : forall lab v x body result,
+    [v // x] body is result ->
+    [(prune_single lab v) // x] (prune_single lab body) is (prune_single lab result).
+  Proof.
+    intros. induction H; subst; try (simpl; auto).
+    destruct (sec_class_eq_dec class lab); auto.
+  Qed.
+
+
+(** ** Incorrect Stability *)
+
+(** Fortunately, while monotonicity was not able to be formally
+verified to due to time constraints, stability was, despite a similar
+issue in originally stating the sub-lemmas inadequately. TODO: Should
+walk through proof of stabilitysinglestep_tooweak? *)
 
 (* Stability single step incorrectly stated & proven *)
   Lemma stabilitysinglestep_tooweak : forall e f lab,
@@ -1118,21 +1151,73 @@ proofs in Coq, which is disappointing. *)
         inversion H1; subst. congruence.
   Qed.
 
-(* Pruning a substitution result is the same as pruning the arg and body before substituting. *)
-  Lemma prunesubst_commute : forall lab v x body result,
-    [v // x] body is result ->
-    [(prune_single lab v) // x] (prune_single lab body) is (prune_single lab result).
-  Proof.
-    intros. induction H; subst; try (simpl; auto).
-    destruct (sec_class_eq_dec class lab); auto.
-  Qed.
+(** The (corrected) proof for stability is conducted similarly to
+that for monotonicity: first, the theorem is rewritten with
+    a single-step relation replacing the multistep and then induction
+    is used on the multistep assumption with this weaker restatement
+    as a backdrop. *)
 
-(* Stability single step correctly stated *)
+(** *** Single-step Stability *)
+
+(** The single-step lemma shows that whenever an expression [e] steps
+to another expression [f] in a single step, either the prune of [e]
+steps to the prune of [f] or the prune of [f] is holier than the
+prune of the term it came from, [e]. For the purposes of clarity, the
+proofs for stability and its related lemmas are restricted to the
+pruning of a single label rather than a list; the full proof would be
+significantly longer and add little value. *)
+
+(** The proof is by induction on the step from [e] to [f]. Many of
+the cases are fairly similar. A few have been picked out to
+demonstrate the process. Since the value of the security class
+identified by the label is irrelevant here and the same in all cases,
+the "[_[lab]]" for prune notation is omitted. *)
+
+(**
+
+- Consider the case where [e --> f] because [e] is of the form [app
+  (abs x T body) arg] and [f] is the result of substituting [arg]
+  into the abstraction. Since the structure of the result is
+  necessarily different than that of an application and the holier
+  relation requires congruent expressions, the possibility of [\\
+  f // << \\ e //] can be eliminated.
+
+  Partially applying the [prune] function on these expressions means
+  we must show that [app (abs x T \\body//) \\arg// -->* \\subres//]
+  where [[arg // x] body is subres]. This amounts to showing that
+  [[\\arg// // x] \\body// is \\subres//] as defined in the [step]
+  relation. The [prunesubst_commute] lemma given above takes care of
+  the rest.
+
+- The case where [e --> f] because by reducing a marked body ([marked
+  class body --> marked class body']) is more interesting. Nothing
+  can be said yet as to which disjunct will apply, because it depends
+  on whether the marked expression is of the security class to be
+  pruned. Consider first that it is. Then [\\marked class bodye//
+  -->* \\marked class bodyf//] is trivial; we're showing that [hole
+  -->* hole]. So now assume it's not. The inductive hypothesis gives
+  us the relationship between [bodye] and [bodyf], so the two
+  cases are examined separately.
+
+  - First consider that [\\bodye// -->* \\bodyf//]. In this case,
+    [markedbodystepstermsteps] makes it easy to show the left
+    disjunct in the conclusion is true: [marked class \\bodye// -->*
+    marked class \\bodyf//].
+
+  - Now assume [\\bodyf// << \\bodye//]. The [<<] relation between
+    marked terms requires exactly this, so the right disjunct is
+    true: [marked class \\bodyf// << marked class \\bodye//].
+
+The rest of the cases follow in a similar fashion by case-splitting
+on the inductive hypothesis and whether [class = lab] if needed.
+
+*)
+
   Lemma stabilitysinglestep : forall e f lab,
     e --> f ->
-    ((\\ e //_(lab::nil) -->* \\ f //_(lab :: nil))
+    \\ e //_ (lab :: nil) -->* (\\ f //_ (lab :: nil))
     \/
-    (\\ f //_(lab :: nil) << \\ e //_(lab::nil))).
+    \\ f //_ (lab :: nil) << \\ e //_ (lab :: nil).
   Proof.
     intros. induction H.
     - left. simpl. apply multi_R. constructor.
@@ -1161,19 +1246,36 @@ proofs in Coq, which is disappointing. *)
         constructor; auto.
   Qed.
 
-(* Stability fully stated multiple labels *)
-  Lemma stability : forall e f labs,
-    noholes f ->
-    e -->* f ->
-    (\\ f //_labs) = f ->
-    \\ e //_labs -->* f.
-  Proof.
-    intros. induction H0. (* induction on e -->* f *)
-    - rewrite H1. apply multi_refl.
-    - apply multi_step with y0. (*?*)
-  Admitted.
 
-(* Stability fully stated single label *)
+(** *** Stability *)
+
+(** Stability is the property where, when any expression [e] that
+steps to an expression [f] without holes or labels to be pruned, the
+prune of [e] will also step to [f].
+
+Proof for the stability theorem is done here by induction on the [e
+-->* f] assumption. Most of the legwork is already accomplished by
+   [monotonicity]. Note that [e -->* f] is a multistep relation, not
+   a single step, and so the base case is that zero steps are
+   taken. If zero steps are taken from [e] to [f], then [e = f] and
+   the conclusion is trivial. If at least one step is taken, [e -->
+   m] for some term [m] and we can assume [m -->* f]. We must show
+   that [\\e// -->* f].
+
+Since we have that [e --> m], [stabilitysinglestep] gives us that
+either [\\e// -->* \\m//] or [\\m// << \\e//].
+
+- If [\\e// -->* \\m//], then the transitivity of [-->*] and the
+  inductive hypothesis give that [\\e// -->* \\m// -->* \\f//].
+
+- Now presume [\\m// << \\e//]. It's already given that [f] has no
+  holes [m -->* f]. All that's needed to apply the [monotonicity]
+  theorem and complete the proof is to show that [\\m// -->* f], but
+  this is exactly what the inductive hypothesis provies and so we are
+  done.
+
+*)
+
   Lemma stabilitySingleLabel : forall e f lab,
     noholes f ->
     e -->* f ->
@@ -1190,6 +1292,22 @@ proofs in Coq, which is disappointing. *)
         * apply IHmulti; auto.
       + eapply monotonicity; eauto.
   Qed.
+
+
+(** TODO: bother with showing the incomplete proof for multiple labels? *)
+
+(* Stability fully stated multiple labels *)
+  Lemma stability : forall e f labs,
+    noholes f ->
+    e -->* f ->
+    (\\ f //_labs) = f ->
+    \\ e //_labs -->* f.
+  Proof.
+    intros. induction H0. (* induction on e -->* f *)
+    - rewrite H1. apply multi_refl.
+    - apply multi_step with y0. (*?*)
+  Admitted.
+
 End STLC.
 
 
