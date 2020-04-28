@@ -1,0 +1,24 @@
+- fixups from paper
+- noninterference proof explanation
+- add slides as reference link
+- move lemma statements above writing
+- spellcheck
+- styling
+    - stylized line bar layout
+        - values
+        - substitution semantics
+        - smallstep
+        - typing
+        - holier relation
+        - pruning
+    - ::= style for syntax
+- table of contents
+- subprunenoorder, prunesubst_commute proofs
+- noninterference in coq
+- monotonicity fixed in coq
+
+- joe questions
+    - in TODOs in text:
+        - better information flow example (joe has one?)
+        - interference statement/proof from slides
+        - references and related work a few links/citations
