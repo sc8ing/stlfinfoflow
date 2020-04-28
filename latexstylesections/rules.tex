@@ -1,0 +1,111 @@
+\documentclass[12pt]{article} \usepackage{bussproofs}
+\usepackage{amssymb} \usepackage{latexsym}
+
+% This is the "centered" symbol
+\def\fCenter{{\mbox{\Large$\rightarrow$}}}
+
+% Optional to turn on the short abbreviations
+\EnableBpAbbreviations
+
+% \alwaysRootAtTop  % makes proofs upside down
+% \alwaysRootAtBottom % -- this is the default setting
+
+\begin{document}
+\thispagestyle{empty}
+
+%%%%%%%%%%%%%%%%%%%%% values %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_abs)}
+    \UnaryInfC{value (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_tru)}
+    \UnaryInfC{value tru}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_fls)}
+    \UnaryInfC{value fls}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{value val}
+\RightLabel{(v\_markedval)}
+    \UnaryInfC{value (marked class val)}
+\end{prooftree}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%% substitutions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_var\_eq)}
+    \UnaryInfC{[v // x] (var x) is s}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{y $\neq$ x}
+    \RightLabel{(s\_var\_neq)}
+    \UnaryInfC{[v // x] (var y) is (var y)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_abs\_eq)}
+    \UnaryInfC{[v // x] (abs x T body) is (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{x $\neq$ y}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_abs\_neq)}
+    \BinaryInfC{[v // x] (abs y T body) is (abs y T body')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \AxiomC{[v // x] arg is arg'}
+    \RightLabel{(s\_app)}
+    \BinaryInfC{[v // x] (app body arg) is (app body' arg')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_tru)}
+    \UnaryInfC{[v // x] tru is tru}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_fls)}
+    \UnaryInfC{[v // x] fls is fls}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] cond is cond'}
+    \AxiomC{[v // x] b1 is b1'}
+    \AxiomC{[v // x] b2 is b2'}
+    \RightLabel{(s\_test)}
+    \TrinaryInfC{[v // x] (test cond b1 b2) is (test cond' b1' b2')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_marked)}
+    \UnaryInfC{[v // x] (marked class body) is (marked class body')}
+\end{prooftree}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%% smallstep %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
