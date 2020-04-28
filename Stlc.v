@@ -1,4 +1,3 @@
-(* TODO: specific case walkthroughs in important coq proofs *)
 
 (** * Abstract *)
 
@@ -668,9 +667,8 @@ expressions with subexpressions step their subexpressions until they
 become values. While the expression as a whole has not completely
 changed shape, it has nevertheless made a step. The following few
 lemmas cover the cases for applications, conditionals ([test]s), and
-marked expressions *)
-(* TODO: mention the lack of an evaluation context making these
-necessary *)
+marked expressions TODO: mention the lack of an evaluation context
+making these necessary *)
 
 (** Bodies of applications (essentially function bodies) are reduced
 as much as possible before the subtitution of the argument is
@@ -1258,15 +1256,16 @@ Proof for the stability theorem is done here by induction on the [e
 Since we have that [e --> m], [stabilitysinglestep] gives us that
 either [\\e// -->* \\m//] or [\\m// << \\e//].
 
-- If [\\e// -->* \\m//], then the transitivity of [-->*] and the
-  inductive hypothesis give that [\\e// -->* \\m// -->* \\f//].
+    - If [\\e// -->* \\m//], then the transitivity of [-->*] and the
+      inductive hypothesis give that [\\e// -->* \\m// -->* \\f//].
 
-- Now presume [\\m// << \\e//]. It's already given that [f] has no
-  holes and [m -->* f]. All that's needed to apply the [monotonicity]
-  theorem and complete the proof is to show that [\\m// -->* f], but
-  this is exactly what the inductive hypothesis provies and so we are
-  done.
-*)
+    - Now presume [\\m// << \\e//]. It's already given that [f] has
+      no holes and [m -->* f]. All that's needed to apply the
+      [monotonicity] theorem and complete the proof is to show that
+      [\\m// -->* f], but this is exactly what the inductive
+      hypothesis provies and so we are done.
+
+test *)
 
   Lemma stabilitySingleLabel : forall e f lab,
     noholes f ->
@@ -1285,10 +1284,9 @@ either [\\e// -->* \\m//] or [\\m// << \\e//].
       + eapply monotonicity; eauto.
   Qed.
 
+(** TODO: bother with showing the incomplete proof for multiple
+labels? *)
 
-(** TODO: bother with showing the incomplete proof for multiple labels? *)
-
-(* Stability fully stated multiple labels *)
   Lemma stability : forall e f labs,
     noholes f ->
     e -->* f ->
@@ -1301,6 +1299,10 @@ either [\\e// -->* \\m//] or [\\m// << \\e//].
   Admitted.
 
 (* ** Non-interference *)
+
+(** Together, stability and monotonicity (along with the guarantees
+of the type system) form the majority of the proof for
+non-interference.
 
 (** TODO: write/explain how non-interference can be derived from
 monotonicity and stabilty (what it is is already introduced above) *)
