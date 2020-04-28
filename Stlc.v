@@ -97,8 +97,8 @@ already believed to probably be true. *)
 is largely based off the work of François Pottier and his
 presentation at The National Institute for Research in Computer
 Science and Automation (INRIA). Some modifications have been made for
-practical reasons – such as the decision not to use evalutation
-contexts and the inclusion of different types in the langauge – but
+practical reasons – such as the decision not to use evaluation
+contexts and the inclusion of different types in the language – but
 these are unimportant to the overall goal and the essence of the
 conclusion is the same. *)
 
@@ -202,10 +202,10 @@ take a step. *)
 
 (** *** Substitutions *)
 
-(** Syntax for subsitution semantics is introduced in the form [[v
+(** Syntax for substitution semantics is introduced in the form [[v
 // x] e is e'] where [v], [e] and [e'] are expressions and [x] is
 a variable that may or may not exist in [e]. The statement can be
-read as "the result of subsituting [v] for [x] in [e] yields
+read as "the result of substituting [v] for [x] in [e] yields
 [e']". The formal rules are detailed below. *)
 
   Reserved Notation "'[' v '//' x ']' e 'is' r" (at level 40).
@@ -257,7 +257,7 @@ read as "the result of subsituting [v] for [x] in [e] yields
 small-step semantics. All well-typed expressions can either take
 a step or are values. The notation [e --> e'] is introduced to mean
 that the expression [e] steps to [e'] in exactly one step. [e -->*
-e'] is then used to denote a multistep relation between [e] and [e']
+e'] is then used to denote a multi-step relation between [e] and [e']
 or zero or more steps. The stepping rules are as follows: *)
 
   Reserved Notation "t1 '-->' t2" (at level 40).
@@ -376,7 +376,7 @@ is the ultimate goal. *)
 (** Holes are of expressions that, in essence, do not exist or
 have been removed for some reason. In the context of this paper,
 holes are introduced into expressions when they are stripped of all
-data consising of a given security class (what's been termed
+data consisting of a given security class (what's been termed
 "pruning" and is detailed further on). The notion of an incomplete or
 holey" expression and the relationship between expressions with
     different numbers of holes provide a means of redaction of terms
@@ -386,14 +386,14 @@ holey" expression and the relationship between expressions with
 An expression [e] is holier than an expression [e'] (written [e <<
 e']) if the ASTs of each expression are congruent (i.e. both are
 variables, abstractions, or some other possible expression) and all
-subexpressions of [e] are holier than the corresponding ones of
+sub-expressions of [e] are holier than the corresponding ones of
 [e']. The requirement for expressions to have congruent ASTs is
 removed for holes – a hole is by definition holier than any other
 expression. Note that the [<<] relation is reflexive as well.
 
 Also given is the proposition [noholes] (not shown here). As would be
-expected, an expression [e] satifies [noholes] if it is not a hole
-and none of its subexpressions are holes. *)
+expected, an expression [e] satisfies [noholes] if it is not a hole
+and none of its sub-expressions are holes. *)
 
   Inductive holier : exp -> exp -> Prop :=
     | H_refl :
@@ -471,7 +471,7 @@ and none of its subexpressions are holes. *)
 
 (** Since the [<<] relation requires the congruence of both
 arguments' ASTs, any proposition of the form [v << v'] where [v] is
-a value entails that [v'] is also a value. The proof procedes by
+a value entails that [v'] is also a value. The proof proceeds by
 induction on the [value] proposition. Most cases follow directly from
 constructors for the [holier] relation. The inductive hypothesis is
 used for expressions of the form [marked class body] to show that the
@@ -540,7 +540,7 @@ never used.
 
 The proof proceeds by induction on the substitution relation. The
 majority of cases proceed by using the [noholes] assumption to derive
-that subexpressions in the result must also not have holes and
+that sub-expressions in the result must also not have holes and
 therefore the inductive hypothesis applies. More detail is given in
 the proof for [noholes_app_arg_orunused] to avoid redundancy since
 they proofs are quite similar. *)
@@ -594,7 +594,7 @@ they proofs are quite similar. *)
   Qed.
 
 (** As mentioned in the above clarification for [subst_noholes],
-similar judgements can be made about the substituted value in
+similar judgments can be made about the substituted value in
 a substitution if the result has no holes. The only difference is the
 additional possibility of this value being unused in the body of the
 substitution, which makes this lemma slightly weaker as
@@ -640,18 +640,18 @@ The rest of the cases are similar. *)
       apply IHnoholes in H4; subst; auto.
   Qed.
 
-(** The way reflexivity is defined for the holier relation means that
+(** The way relativity is defined for the holier relation means that
 any expression without holes [e] that's holier than another
 expression [e'] must be equivalent to [e']. The proof proceeds by
 induction on the assertion that [e] has no holes. The congruence of
 the [<<] relation then gives the equivalence of [e] to [e'] for
 expressions that are values. The inductive hypothesis serves to show
-equivalence for expressions with subexpressions. *)
+equivalence for expressions with sub-expressions. *)
 
 (** As an example, the [e = test cond b1 b2] case is given. From the
 assumption that [test cond b1 b2 << e'], we know [e'] is of the form
 [test cond' b1' b2'], [cond << cond'], [b1 << b1'], and [b2 <<
-b2']. By the inductive hypotheses, all of these subexpressions must
+b2']. By the inductive hypotheses, all of these sub-expressions must
 therefore be equivalent. Consequently, the [test] expressions are
 equivalent. The rest of the cases proceed similarly. *)
   
@@ -667,16 +667,16 @@ equivalent. The rest of the cases proceed similarly. *)
   Qed.
 
 (** According to the smallstep rules for this language, several
-expressions with subexpressions step their subexpressions until they
+expressions with sub-expressions step their sub-expressions until they
 become values. While the expression as a whole has not completely
 changed shape, it has nevertheless made a step. The following few
 lemmas cover the cases for applications, conditionals ([test]s), and
 marked expressions. In a richer language, evaluation contexts could
 be used to avoid an explosion of similar lemmas for each possible
-expression with subexpressions. *)
+expression with sub-expressions. *)
 
 (** Bodies of applications (essentially function bodies) are reduced
-as much as possible before the subtitution of the argument is
+as much as possible before the substitution of the argument is
 made. Hence, if the body can take a step, the entire term can take
 a step. The proof is straightforward induction on the stepping
 relation between the body of the application and the expression is
@@ -803,7 +803,7 @@ e']. Some of the cases are rather straightforward. *)
   [body] steps to some other expression [body']. [f] must also be
   a marked expression, so it is of the form [marked classf
   bodyf]. Since the stepping relation gives no way for a security
-  class to be altered from the stepping of a subexpression, we can
+  class to be altered from the stepping of a sub-expression, we can
   further derive that [class = classf].
 
   Showing that [e' -->* f] can now be rewritten as showing [marked
@@ -862,7 +862,7 @@ possible ways that [e], of the form [app bodye arge], can step to
 
     Since the result of the substitution, [f], has no holes, either
     [arge] has no holes, or [bodye] doesn't use the variable to
-    substitute in for. This deduction is captured in the
+    substitute in for. This argument is captured in the
     [noholes_app_arg_orunused] lemma from earlier. 
 
     - First, the case of [noholes arge]. [noholes_holier_means_eq]
@@ -904,7 +904,7 @@ discovered in the approach to proving this theorem late along the
 process. An unfortunate problem arises when trying to use the
 [monotonicity_single_step] proven above to prove the full
 [monotonicity] lemma below: as it turns out, the assertion is simply
-too weak. When induction is done on the multistep relation from [e]
+too weak. When induction is done on the multi-step relation from [e]
 to [f], it becomes necessary to prove that there exists a middle
 expression [m] such that [e --> m] and [m -->* f]. However, there is
 no guarantee that this middle expression satisfies the [noholes]
@@ -921,7 +921,7 @@ information necessary to complete the proof, namely that the
 expression [m] that [e] steps to is still holier than the expression
 [m'] that [e'] steps to, since [monotonicity_single_step] requires in
 its premises that [e << f]. The correct way to fix these issues
-involes restating [monotonicity_single_step] to remove the
+involves restating [monotonicity_single_step] to remove the
 requirement that both [e] and [e'] step to the same
 expression. Additionally, it shouldn't yet be required that [f] not
 have holes. Such a lemma looks like this: *)
@@ -993,7 +993,7 @@ introduced and several stepping-stone lemmas are proven. *)
 _pruning_ a list of labels (security classes) from an expression
 [e]. To prune an expression of a labeled security class [lab] is to
 replace all marked expressions [marked class body] where [class
-= lab] with holes. The replacement descends into subexpressions
+= lab] with holes. The replacement descends into sub-expressions
 recursively. *)
 
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
@@ -1248,7 +1248,7 @@ prune of [e] will also step to [f]. *)
       no holes and [m -->* f]. All that's needed to apply the
       [monotonicity] theorem and complete the proof is to show that
       [\\m// -->* f], but this is exactly what the inductive
-      hypothesis provies and so we are done.
+      hypothesis provides and so we are done.
 
 *)
 
@@ -1264,7 +1264,7 @@ TODO: unsure how to state this from the slides *)
 (** 
 
 - The idea for using stability and monotonicity to complete
-  a synactic proof of non-interference was inspired by François
+  a syntactic proof of non-interference was inspired by François
   Pottier's 2004 presentation at INRIA. The slides of his
   presentation can be found at
   http://gallium.inria.fr/~fpottier/slides/eugene.pdf.

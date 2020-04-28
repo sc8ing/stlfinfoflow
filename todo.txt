@@ -1,9 +1,3 @@
-x fixups from paper
-x add slides as reference link
-
-- noninterference proof explanation
-- move lemma statements above writing
-- spellcheck
 - styling
     - stylized line bar layout
         - values
@@ -15,7 +9,6 @@ x add slides as reference link
     - ::= style for syntax
 - table of contents
 - subprunenoorder, prunesubst_commute proofs
-- noninterference in coq
 - monotonicity fixed in coq
 
 - joe questions
@@ -23,3 +16,7 @@ x add slides as reference link
         - better information flow example (joe has one?)
         - interference statement/proof from slides
         - references and related work a few links/citations
+
+******* blocked *******
+- noninterference proof explanation (TODO marked for joe)
+- noninterference in coq
