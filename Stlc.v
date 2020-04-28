@@ -94,7 +94,7 @@ and not merely the results of the proofs themselves, which were
 already believed to be true. *)
  
 
-(** * General Structure of the Proof *)
+(** ** About the Proof *)
 
 (** The formal proof for type-based information flow presented here
 is largely based off the work of François Pottier and his
@@ -181,6 +181,8 @@ below. *)
 
 (** ** Semantics *)
 
+(** *** Values *)
+
 (** In order to differentiate between a program that "gets stuck" and
 one that has terminated successfully, the notion of a [value]
 proposition is introduced. Values are expressions that are well-typed
@@ -201,6 +203,8 @@ but cannot take a step. *)
 (* begin hide *) 
   Hint Constructors value.
 (* end hide *)
+
+(** *** Substitutions *)
 
 (** Syntax for subsitution semantics is introduced in the form [[v
 // x] e is e'] where [v], [e] and [e'] are expressions and [x] is
@@ -251,7 +255,9 @@ read as "the result of subsituting [v] for [x] in [e] yields
   Hint Constructors substi.
   (* end hide *)
 
-(** The reduction of expressions in the language is defined using
+(* *** Smallstep *)
+
+(** The reduction of expressions in the language is given in
 small-step semantics. All well-typed expressions can either take
 a step or are values. This claim is proven formally here later on in
 the typical form of progress and preservation. For clarity, the 
@@ -311,7 +317,7 @@ a multistep relation between [e] and [e'] or zero or more steps. *)
   Reserved Notation "Gamma '|-' t '\in' T" (at level 40).
 (* end hide *)
 
-(** ** Static Typing *)
+(** ** Typing *)
 
 (** The following relation is defined to type an expression and
 guarantee type safety. Any expression not satisfying the requirements
@@ -373,7 +379,7 @@ is the ultimate goal. *)
 (** The following are the building blocks off which the final proof
 will be constructed. *)
 
-(** *** Hole Definitions and Relations *)
+(** *** Hole Definitions and the Holier Relation ([<<]) *)
 
 (** Holes are pieces of expressions that, in essence, do not exist or
 have been removed for some reason. In the context of this paper,
@@ -455,12 +461,6 @@ and none of its subexpressions are holes. *)
         noholes body ->
         noholes (marked class body).
 (* end hide *)
-
-
-(** *** Hole Lemmas *)
-
-(** This section contains several lemmas regarding holes and their
-relationships to other expressions. *)
 
 (** **** holyval_meansval *)
 
@@ -661,10 +661,7 @@ equivalent. The rest of the cases proceed similarly. *)
       apply IHnoholes in H4; subst; auto.
   Qed.
 
-
-
-
-(** *** Stepping Lemmas *)
+(** *** bodystepsappsteps *)
 
 (** According to the smallstep rules for this language, several
 expressions with subexpressions step their subexpressions until they
@@ -674,8 +671,6 @@ lemmas cover the cases for applications, conditionals ([test]s), and
 marked expressions *)
 (* TODO: mention the lack of an evaluation context making these
 necessary *)
-
-(** **** bodystepsappsteps *)
 
 (** Bodies of applications (essentially function bodies) are reduced
 as much as possible before the subtitution of the argument is
@@ -693,9 +688,9 @@ steps to. *)
     - apply multi_step with (app y0 arg); auto.
   Qed.
 
-(** **** condstepsteststeps *)
+(** *** condstepsteststeps *)
 
-(* Conditionals are stepped until their condition reduces to
+(** Conditionals are stepped until their condition reduces to
 a boolean value. The proof is almost identical to
 [bodystepsappsteps]. *)
 
@@ -708,7 +703,7 @@ a boolean value. The proof is almost identical to
     - apply multi_step with (test y0 b1 b2); auto.
   Qed.
 
-(** **** markedbodstepstermsteps *)
+(** *** markedbodstepstermsteps *)
 
 (** Sub-stepping also applies to marked expressions and their
 subexpression. This proof is also the same. *)
@@ -721,22 +716,15 @@ subexpression. This proof is also the same. *)
     - constructor.
     - apply multi_step with (marked class y0); auto.
   Qed.
-
-
-
-
   
-(******************************************************************)
-(** * Monotonicity *)
+(** ** Monotonicity *)
 
 (** The above set of lemmas are sufficient to prove
 monotonicity, which is the property that any time an expression [e]
 that's holier than an expression [e'] steps to an expression [f]
 containing no holes, [e'] must also eventually step to [f]. *)
 
-(** ** Single-step Monotonicity *)
-
-(** *** Misguided Attempt *)
+(** *** Single-step Version *)
 
 (** It should be mentioned at this point that a mistake was
 discovered in the approach to proving this theorem late along the
@@ -747,7 +735,7 @@ thought that proving the version with multi-step would be done by
 induction on the stepping relation [e -->* f], which is where this
 single-step lemma would come in. As will be shown, though, this
 approach is flawed. Nevertheless, it is worth walking through the
-structure of the below lemma. *) (* TODO: why? *)
+structure of the below lemma. *) (** TODO: why? or maybe move below? *)
 
 (** The proof begins with induction on the holier relation [e <<
 e']. Some of the cases are rather straightforward. *)
@@ -848,14 +836,11 @@ that [e] (of the form [app body arg] can step to [f].
       going unused, [arge'] is irrelevant and [bodye = bodye'
       = f]. This case reduces to showing that the step from [e'] to
       [f] amounts to a discarding of the application's argument and
-      retaining the body. TODO: but how did we know that there would
-      only be one step between [e'] and [f] and choose to apply
+      retaining of the body. TODO: but how did we know that there
+      would only be one step between [e'] and [f] and choose to apply
       multi_R earlier on?
-
-    This completes the proof of the [app] case.
 *)
 
-(* begin hide *)
   Lemma monotonicity_single_step : forall e e' f,
     noholes f ->
     e << e' ->
@@ -923,9 +908,8 @@ that [e] (of the form [app body arg] can step to [f].
       apply IHholier in H3; auto.
       apply markedbodstepstermsteps. assumption.
   Qed.
-(* end hide *)
 
-(** *** Method Flaws and Future Fixes *)
+(** *** Full Version *)
 
 (** As mentioned previously, an unfortunate problem arises when
 trying to use the [monotonicity_single_step] proven above to prove
@@ -936,14 +920,13 @@ prove that there exists a middle expression [m] such that [e --> m]
 and [m -->* f]. However, there is no guarantee that this middle
 expression satisfies the [noholes] proposition and therefore the
 [monotonicity_single_step] lemma no longer applies. Below is the
-statement for how monotonicity is stated in Coq. *)
+statement for how monotonicity is stated in Coq. TODO: "Method Flaws and Future Fixes"? *)
 
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
     e -->* f ->
     e' -->* f.
-(* begin hide *)
   Proof.
     intros. generalize dependent e'.
     induction H1.
@@ -952,9 +935,8 @@ statement for how monotonicity is stated in Coq. *)
     - intros. eapply monotonicity_single_step in H0.
       + apply IHmulti; auto.
   Admitted.
-(* end hide *)
   
-(**  One approach that was considered for remedying this problem is
+(** One approach that was considered for remedying this problem is
 to reverse the induction principle. Concretely speaking, we could
 take the same approach as outlined above with the middle expression
 [m], but instead formulate logically equivalent goals of the form [e
@@ -966,7 +948,6 @@ expression [m] that [e] steps to is still holier than the expression
 its premises that [e << f]. *)
 
 (* begin hide *)
-(* Multistep induction reversal statement *)
   Lemma multi_ind_rev :
     forall (X : Type) (R : relation X) (P : X -> X -> Prop),
     (forall x : X, P x x) ->
@@ -975,7 +956,6 @@ its premises that [e << f]. *)
   Proof.
   Admitted.
 
-(* Monotonicity fully stated reversed induction attempt *)
   Lemma monotonicity_rev_ind : forall e e' f,
     noholes f ->
     e << e' ->
@@ -1001,10 +981,8 @@ this: *)
     e << e' ->
     e --> f ->
     exists f', e' -->* f' /\ f << f'.
-(* begin hide *)
   Proof.
   Admitted.
-(* end hide *)
 
 (** The conclusion is now slightly weaker, but contains the still
 useful addition that [f << f'] and compensates by relaxing the
@@ -1031,25 +1009,21 @@ original statement of [monotonicity]. *)
 too late in the semester to allow for time to reconstruct the entire
 proofs in Coq, which is disappointing. *)
 
-
-(******************************************************************)
-(** * Stability *)
+(** ** Lemmas and Definitions for Stability *)
 
 (** The second (and last) component leading to non-interference is
 what's referred to as stability. First, some terminology is
 introduced and several stepping-stone lemmas are proven. *)
 
-(** ** Lemmas and Definitions for Stability *)
+(** *** Pruning *)
 
-(** *** Pruning Definitions *)
-
-(** First, the notation [\\ e //_ labs] is introduced to symbolize
-the result of _pruning_ a list of labels (security classes) from an
-expression [e]. To prune an expression of a labeled security class
-[lab] is to replace all marked expressions [marked class body] where
-[class = lab] with holes. The replacement descends into
-subexpressions recursively. Concretely, the formal definitions in Coq
-are shown below for clarification. *)
+(** The notation [\\ e //_ labs] is used to symbolize the result of
+_pruning_ a list of labels (security classes) from an expression
+[e]. To prune an expression of a labeled security class [lab] is to
+replace all marked expressions [marked class body] where [class
+= lab] with holes. The replacement descends into subexpressions
+recursively. Concretely, the formal definitions in Coq are shown
+below for clarification. *)
 
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
@@ -1120,13 +1094,13 @@ argument and body before making the substitution. *)
     destruct (sec_class_eq_dec class lab); auto.
   Qed.
 
+(** ** Stability *)
 
-(** ** Incorrect Stability *)
-
-(** Fortunately, while monotonicity was not able to be formally
-verified to due to time constraints, stability was, despite a similar
-issue in originally stating the sub-lemmas inadequately. TODO: Should
-walk through proof of stabilitysinglestep_tooweak? *)
+(** Fortunately, while monotonicity was not able to be
+machine-verified to due to time constraints, stability was, despite
+a similar issue in originally stating the sub-lemmas
+inadequately. TODO: Should walk through proof of
+stabilitysinglestep_tooweak? *)
 
 (* Stability single step incorrectly stated & proven *)
   Lemma stabilitysinglestep_tooweak : forall e f lab,
@@ -1171,13 +1145,13 @@ walk through proof of stabilitysinglestep_tooweak? *)
         inversion H1; subst. congruence.
   Qed.
 
+(** *** Single-step Version *)
+
 (** The (corrected) proof for stability is conducted similarly to
 that for monotonicity: first, the theorem is rewritten with
     a single-step relation replacing the multistep and then induction
     is used on the multistep assumption with this weaker restatement
     as a backdrop. *)
-
-(** *** Single-step Stability *)
 
 (** The single-step lemma shows that whenever an expression [e] steps
 to another expression [f] in a single step, either the prune of [e]
@@ -1266,8 +1240,7 @@ on the inductive hypothesis and whether [class = lab] if needed.
         constructor; auto.
   Qed.
 
-
-(** *** Stability *)
+(** *** Full Version *)
 
 (** Stability is the property where, when any expression [e] that
 steps to an expression [f] without holes or labels to be pruned, the
@@ -1289,11 +1262,10 @@ either [\\e// -->* \\m//] or [\\m// << \\e//].
   inductive hypothesis give that [\\e// -->* \\m// -->* \\f//].
 
 - Now presume [\\m// << \\e//]. It's already given that [f] has no
-  holes [m -->* f]. All that's needed to apply the [monotonicity]
+  holes and [m -->* f]. All that's needed to apply the [monotonicity]
   theorem and complete the proof is to show that [\\m// -->* f], but
   this is exactly what the inductive hypothesis provies and so we are
   done.
-
 *)
 
   Lemma stabilitySingleLabel : forall e f lab,
@@ -1328,47 +1300,13 @@ either [\\e// -->* \\m//] or [\\m// << \\e//].
     - apply multi_step with y0. (*?*)
   Admitted.
 
+(* ** Non-interference *)
+
 (** TODO: write/explain how non-interference can be derived from
 monotonicity and stabilty (what it is is already introduced above) *)
 
+(** * References and Related Work *)
+
+(* begin hide *)
 End STLC.
-
-
-
-(******************************************************************)
-(* Scraps idk if will be needed *)
-
-(* monotonicity multistep holier induction attempt *)
-(*
-    (* induction on holier relation *)
-    intros. generalize dependent f.
-    induction H0; intros; subst; auto.
-    - inversion H1; subst. inversion H. inversion H0.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; subst; auto.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-      + admit.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0; subst; auto.
-      + eapply monotonicity_single_step in H2; auto.
-        * inversion H1; subst.
-          inversion H; subst.
-          specialize H5 as H5'.
-          apply IHholier in H5.
-          apply noholes_holier_means_eq in H0; subst; auto.
-          constructor.
-          admit.
-        * inversion H2.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; subst; auto.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-        apply noholes_holier_means_eq in H0_1; subst; auto.
-      + admit.
-    - inversion H1; subst.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0; subst; auto.
-      + admit.
-*)
+(* end hide *)
