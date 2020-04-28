@@ -56,8 +56,8 @@ contents of [x].
 explored in the literature. For the purposes of this paper, all
 expressions in a language can be assigned a security level of either
 [High] or [Low]. The assertion that the flow of information in
-a program is secure can then be stated as below: For any two sets of
-high-security inputs [H1], [H2] and low-security input [L], the
+a program is secure can then be stated as follows: For any two sets
+of high-security inputs [H1], [H2] and low-security input [L], the
 low-security result of executing a program with [H1] and [L] as its
 initial states is identical to executing it with [H2] and [L] as its
 initial states.
@@ -313,14 +313,14 @@ a multistep relation between [e] and [e'] or zero or more steps. *)
 
 (** ** Static Typing *)
 
-(** The following relation is defined to type an expression. Any
-expression not satisfying the requirements of one of the constructors
-is ill-typed and therefore illegal. Constraining the amount of types
-in the language keeps this specification relatively short.  Following
-convention as closely as possible within the limitations of Coq's
-syntactical restraints, the notation [Gamma |- e \in T] is used to
-        signify that expression [e] is of type [T] under a typing
-        context [Gamma]. *)
+(** The following relation is defined to type an expression and
+guarantee type safety. Any expression not satisfying the requirements
+of one of the constructors is ill-typed and therefore
+illegal. Constraining the amount of types in the language keeps this
+specification relatively short. Following convention as closely as
+possible within the limitations of Coq's syntactical restraints, the
+notation [Gamma |- e \in T] is used to signify that expression [e] is
+        of type [T] under a typing context [Gamma]. *)
 
   Inductive has_dtype : context -> exp -> data_type -> Prop :=
     | T_Var : forall Gamma x T,
@@ -561,6 +561,19 @@ body of the substitution must be accounted for and makes this lemma
 slightly weaker as a consequence. The proof proceeds similarly by
 induction over the substitution. *)
 
+(** Consider the case where a substitution is made into an expression
+like [app body arg] to yield one like [app body' arg']. Since the
+latter has no holes, neither do [body'] or [arg']. This allows for
+the inductive hypotheses to give that either [arg] has no holes or
+[body = body']. If [arg] has no holes, we're done.
+
+Now use the induction hypothesis to get from [noholes arg'] that
+either (redundantly) [noholes arg] or [arg = arg']. The first case is
+the same. We're still in the case where [body = body'], though, so
+showing that [app body arg = app body' arg'] is already done.
+
+The rest of the cases are similar. *)
+
   Lemma noholes_app_arg_orunused : forall x body arg f,
   noholes f ->
   [arg // x] body is f ->
@@ -616,6 +629,13 @@ induction on the assertion that [e] has no holes. The congruence of
 the [<<] relation then gives the equivalence of [e] to [e'] for
 expressions that are values. The inductive hypothesis serves to show
 equivalence for expressions with subexpressions. *)
+
+(** As an example, the [e = test cond b1 b2] case is given. From the
+assumption that [test cond b1 b2 << e'], we know [e'] is of the form
+[test cond' b1' b2'], [cond << cond'], [b1 << b1'], and [b2 <<
+b2']. By the inductive hypotheses, all of these subexpressions must
+therefore be equivalent. Consequently, the [test] expressions are
+equivalent. The rest of the cases proceed similarly. *)
   
   Lemma noholes_holier_means_eq : forall e e',
     noholes e ->
@@ -1307,6 +1327,9 @@ either [\\e// -->* \\m//] or [\\m// << \\e//].
     - rewrite H1. apply multi_refl.
     - apply multi_step with y0. (*?*)
   Admitted.
+
+(** TODO: write/explain how non-interference can be derived from
+monotonicity and stabilty (what it is is already introduced above) *)
 
 End STLC.
 
