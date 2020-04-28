@@ -1,14 +1,12 @@
-- table of contents
-- fix links
 - monotonicity fixed in coq
 - subprunenoorder, prunesubst_commute proofs
 
-- joe questions
-    - in TODOs in text:
-        - better information flow example (joe has one?)
-        - interference statement/proof from slides
-        - references and related work a few links/citations
+- table of contents
+- fix links
+
 
 ******* blocked *******
 - noninterference proof explanation (TODO marked for joe)
-- noninterference in coq
+- references/related work links/citations (TODO marked for joe)
+- better information flow example (TODO marked for joe)
+- noninterference in coq (need to understand first)
