@@ -1,7 +1,7 @@
+- last sections disappearing again
+
 - monotonicity fixed in coq
 - subprunenoorder, prunesubst_commute proofs
-
-- table of contents
 - fix links
 
 
