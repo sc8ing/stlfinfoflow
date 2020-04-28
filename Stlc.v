@@ -4,18 +4,17 @@
 (** Safely securing data is always a priority for systems that work
 with sensitive information. There are numerous ways to protect the
 integrity of data and manage the permissions as to how it can be
-accessed, but all of these rely on the programmer to correctly
-implement, and the success of this task can become difficult to
-ensure as a project grows. Information flow analysis provides a means
-to formally guarantee certain restraints surrounding information flow
-are met. By using a type-based approach, these assertions can be
-built in to the programming language's type system, thus removing the
-need for external analysis and providing compile-time checking. The
-various techniques for proving these assertions are sound have been
-well documented. The goal of this thesis is to formally verify the
-integrity of one of these proofs using the automated proof management
-system Coq.
-*)
+accessed, but most rely on the programmer to correctly implement
+- a task which can become exceedingly difficult to ensure is met
+satisfactorily as a project grows. Information flow analysis provides
+a means to formally guarantee that certain constraints are met. By
+using a type-based approach, these assertions can be embedded in
+a programming language's type system directly, thus removing the need
+for external analysis and providing compile-time checking. The
+various techniques for proving these assertions are sound and well
+documented. The goal of this thesis is to formally verify the
+integrity of one of these proofs using the proof management system
+Coq.  *)
 
 
 (** * Background *)
@@ -24,14 +23,14 @@ system Coq.
 
 (** When a program is executed, bits of data are stored in various
 regions of the computer's memory. Some of this information may be of
-greater importance a voting system in which it must be ensured that
-the development of publicly-available aggregate data of candidate
-totals cannot be used to recover information about who voted. (TODO
-better example). In such cases it's not only critical to ensure that
-the program does not accidentally leak sensitive information to
-low-security areas, but also that implicit information regarding the
-structure or content of sensitive data remains solely in
-high-security areas as well.
+greater importance, such as in a voting system where it must be
+ensured that the development of publicly-available aggregate data of
+candidate totals cannot be used to recover information about who
+voted. (TODO better example?). In such cases it's not only critical
+to ensure that the program does not accidentally leak sensitive
+information to low-security areas, but also that implicit information
+regarding the structure or content of sensitive data remains solely
+in high-security areas as well.
 
 For example, a simple imperative program with high-security data in
 some variable [x] and low-security data in [y] of the following form
@@ -55,42 +54,41 @@ contents of [x].
 explored in the literature. For the purposes of this paper, all
 expressions in a language can be assigned a security level of either
 [High] or [Low]. The assertion that the flow of information in
-a program is secure can then be stated as follows: For any two sets
+a program is secure can then be stated as follows: for any two sets
 of high-security inputs [H1], [H2] and low-security input [L], the
 low-security result of executing a program with [H1] and [L] as its
 initial states is identical to executing it with [H2] and [L] as its
-initial states.
-
-This proposition is referred to as non-interference. *)
+initial states. This proposition is referred to as
+non-interference. TODO: how to state this property for the way this
+language is set up? *)
 
 
 (** ** The Proof Assistant Coq *)
 
 (** Coq is an interactive theorem prover used to assist in formal
 proofs in a logical framework. It includes both a custom programming
-language Gallina with advanced implementations of type theory and
-a language for constructing formal, machine-checked proofs - often
-regarding properties of a program, but also used for intricate
-mathematical proofs.
+language Gallina with advanced implementations of type theory as well
+as a language for constructing machine-checked proofs. Coq is often
+used to prove properties of programs and languages, but is also used
+for intricate mathematical proofs and other related domains.
 
 Part of what makes a system like Coq so powerful is the guarantees it
-can provide for accuracy and correctness. Not only does the
-specification of the language itself have the weak normalization
-property (meaning programs cannot diverge), but it also allows for
-complicated, multifaceted arguments to be constructed with many
-parts. As such, it lends itself naturally to areas of computer
-science where extreme rigor is necessary, such as encryption or
-compiler verification. Areas related to the effectiveness of security
-techniques, such as information flow, are also strong candidates for
-machine-checked proofs in order to increase confidence in the
-program.
+can provide for correctness. Not only does the specification of the
+language itself have the weak normalization property (meaning
+programs cannot diverge), but it also allows for complicated
+arguments to be constructed with many parts. As such, it lends itself
+naturally to areas of computer science where extreme rigor is
+necessary, such as encryption or compiler verification. Areas related
+to the effectiveness of security techniques, such as information
+flow, are also strong candidates for machine-checked proofs in order
+to increase confidence in the program.
 
 The reader should keep in mind that, while the proofs given in this
 paper are written out in a conventional style, every step given is
 backed by the formal guarantees of the Coq theorem assistant in
 a machine-checked proof, which is ultimately what this paper is about
 and not merely the results of the proofs themselves, which were
-already believed to be true. *)
+already believed to probably be true. *)
  
 
 (** ** About the Proof *)
@@ -98,11 +96,11 @@ already believed to be true. *)
 (** The formal proof for type-based information flow presented here
 is largely based off the work of François Pottier and his
 presentation at The National Institute for Research in Computer
-Science and Automation (INRIA). (TODO: link?) Some modifications have
-been made for practical reasons – such as the decision not to use
-evalutation contexts and the inclusion of different types in the
-langauge – but these are unimportant to the overall goal and the
-essence of the conclusion is the same. *)
+Science and Automation (INRIA). Some modifications have been made for
+practical reasons – such as the decision not to use evalutation
+contexts and the inclusion of different types in the langauge – but
+these are unimportant to the overall goal and the essence of the
+conclusion is the same. *)
 
 
 (** * The Language *)
@@ -112,7 +110,7 @@ to construct the proof. For the purposes of clarity, it is rather
 bare bones. More involved languages for practical use in the real
 world would nevertheless follow the same fundamental structure,
 simply with more nuances. The critical detail of whatever language is
-used is that it must be typed. (TODO: is this true? more details). *)
+used is that it must be typed. (TODO: is this true?). *)
 
 (* begin hide *)
 Set Warnings "-notation-overridden,-parsing".
@@ -128,14 +126,14 @@ Module STLC.
 
 (** ** Syntax *)
 
-(** The language contains only booleans as a primitive data type
-, along with two-argument functions. Expressions are similar to
-simply-typed lambda calculus, with two notable additions: [hole] and
-[marked]. The latter is the purely-syntactical way for a programmer
-to mark an expression as belonging to one of two security classes,
-either [High] or [Low]. Types, security classes, and expressions are
-defined straightforwardly in Coq as the inductive data types shown
-below. *)
+(** The language contains only booleans as a primitive data type,
+along with single-argument functions. Expressions are vaguely similar
+to simply-typed lambda calculus, with two notable additions: [hole]
+and [marked]. The latter is the purely-syntactical way for
+a programmer to mark an expression as belonging to one of two
+security classes, either [High] or [Low]. Types, security classes,
+and expressions are defined straightforwardly in Coq as the inductive
+data structures shown below. *)
 
   Inductive data_type : Type :=
     | Bool  : data_type
@@ -183,9 +181,9 @@ below. *)
 (** *** Values *)
 
 (** In order to differentiate between a program that "gets stuck" and
-one that has terminated successfully, the notion of a [value]
-proposition is introduced. Values are expressions that are well-typed
-but cannot take a step. *)
+one that has terminated successfully, a [value] proposition is
+introduced. Values are expressions that are well-typed but cannot
+take a step. *)
 
   Inductive value : exp -> Prop :=
     | v_abs :
@@ -209,7 +207,7 @@ but cannot take a step. *)
 // x] e is e'] where [v], [e] and [e'] are expressions and [x] is
 a variable that may or may not exist in [e]. The statement can be
 read as "the result of subsituting [v] for [x] in [e] yields
-[e']". *)
+[e']". The formal rules are detailed below. *)
 
   Reserved Notation "'[' v '//' x ']' e 'is' r" (at level 40).
   Inductive substi (x : string) (s : exp) : exp -> exp -> Prop :=
@@ -258,11 +256,10 @@ read as "the result of subsituting [v] for [x] in [e] yields
 
 (** The reduction of expressions in the language is given in
 small-step semantics. All well-typed expressions can either take
-a step or are values. This claim is proven formally here later on in
-the typical form of progress and preservation. For clarity, the 
-notation [e --> e'] is introduced to mean that the expression [e]
-steps to [e'] in exactly one step. [e -->* e'] is then used to state
-a multistep relation between [e] and [e'] or zero or more steps. *)
+a step or are values. The notation [e --> e'] is introduced to mean
+that the expression [e] steps to [e'] in exactly one step. [e -->*
+e'] is then used to denote a multistep relation between [e] and [e']
+or zero or more steps. The stepping rules are as follows: *)
 
   Reserved Notation "t1 '-->' t2" (at level 40).
   Inductive step : exp -> exp -> Prop :=
@@ -375,18 +372,17 @@ is the ultimate goal. *)
 
 (** ** Lemmas and Definitions For Monotonicity *)
 
-(** The following are the building blocks off which the final proof
-will be constructed. *)
-
 (** *** Hole Definitions and the Holier Relation ([<<]) *)
 
-(** Holes are pieces of expressions that, in essence, do not exist or
+(** Holes are of expressions that, in essence, do not exist or
 have been removed for some reason. In the context of this paper,
 holes are introduced into expressions when they are stripped of all
-data consising of a given security class. The notion of an incomplete
-or "holey" expression and the relation between expressions with
+data consising of a given security class (what's been termed
+"pruning" and is detailed further on). The notion of an incomplete or
+holey" expression and the relationship between expressions with
     different numbers of holes provide a means of redaction of terms
-    that would violate information flow typing.
+    that would otherwise violate the safety information flow typing
+    seeks to provide.
 
 An expression [e] is holier than an expression [e'] (written [e <<
 e']) if the ASTs of each expression are congruent (i.e. both are
@@ -461,16 +457,14 @@ and none of its subexpressions are holes. *)
         noholes (marked class body).
 (* end hide *)
 
-(** **** holyval_meansval *)
+(** *** holyval_meansval *)
 
 (** Since the [<<] relation requires the congruence of both
 arguments' ASTs, any proposition of the form [v << v'] where [v] is
 a value entails that [v'] is also a value. The proof procedes by
-induction on the [value] proposition. Informally, most of the cases
-follow directly from the fact that the [holier] relation requires
-both arguments to be congruent and therefore the premise [v1 << v2]
-requires [v2] to be a value as well. The inductive hypothesis is used
-for expressions of the form [marked class body] to show that the
+induction on the [value] proposition. Most cases follow directly from
+constructors for the [holier] relation. The inductive hypothesis is
+used for expressions of the form [marked class body] to show that the
 bodies of both marks must be the same. *)
 
   Lemma holyval_meansval : forall v1 v2,
@@ -484,7 +478,7 @@ bodies of both marks must be the same. *)
     - subst. apply IHvalue. assumption.
   Qed.
 
-(** **** holier_abs_inv *)
+(** *** holier_abs_inv *)
 
 (** For any abstraction [abs x T body] holier than an another
 expression [e'], there must exist some [body'] such that [body <<
@@ -496,12 +490,12 @@ monotonicity.
 As a side note, this proof is a rather good example of the degree to
 which tactics can automate the more tedious aspects of proofs. For
 a more complex language with a wide variety of expressions, doing
-induction on an expression as in the first case of the below proof
-would be exceedingly tedious to check formally since the number of
-cases corresponds to the number of forms for expressions. In the
-following example, <<"; eauto">> amounts to saying "most of the cases
-follow directly from the assumption" and removes the need to
-explicitly iterate through them. *)
+induction on an expression would be exceedingly tedious to check
+manually since the number of cases corresponds to the number of forms
+for expressions. In the machine proof, <<"; eauto">> is used and
+amounts to saying "most of the cases follow directly from the
+assumption", thus removing the need to explicitly iterate through
+them. *)
 
   Lemma holier_abs_inv : forall x T body e',
     (abs x T body) << e' ->
@@ -512,20 +506,22 @@ explicitly iterate through them. *)
     - exists body'. auto.
   Qed.
 
-(** **** subst_noholes *)
+(** *** subst_noholes *)
 
 (** If the result of a substitution has no holes, then the expression
-into which the substituion was done ([body]) must not have had any
+into which the substitution was done ([body]) must not have had any
 holes to begin with. Note that it's not necessarily true that the
 term substituted in ([arg]) has no holes, since the substitution
 relation as defined does not require the substitution variable ([x])
-to exists in [body] - in other words, a hole could be subbed in and
+to exists in [body] - in other words, a hole could be "subbed in" but
 never used.
 
 The proof proceeds by induction on the substitution relation. The
 majority of cases proceed by using the [noholes] assumption to derive
 that subexpressions in the result must also not have holes and
-therefore the inductive hypothesis applies. *)
+therefore the inductive hypothesis applies. More detail is given in
+the proof for [noholes_app_arg_orunused] to avoid redundancy since
+they proofs are quite similar. *)
 
   Lemma subst_noholes : forall x body arg result,
     [ arg // x ] body is result ->
@@ -550,15 +546,15 @@ therefore the inductive hypothesis applies. *)
       apply IHsubsti in H2. auto.
   Qed.
   
-(** **** noholes_app_arg_orunused *)
+(** *** noholes_app_arg_orunused *)
 
 (** As mentioned in the above clarification for [subst_noholes],
 similar judgements can be made about the substituted value in
-a substitution if the result has no holes. The only difference is
-that the additional possibility of this value being unused in the
-body of the substitution must be accounted for and makes this lemma
-slightly weaker as a consequence. The proof proceeds similarly by
-induction over the substitution. *)
+a substitution if the result has no holes. The only difference is the
+additional possibility of this value being unused in the body of the
+substitution, which makes this lemma slightly weaker as
+a consequence. The proof proceeds similarly by induction over the
+substitution. *)
 
 (** Consider the case where a substitution is made into an expression
 like [app body arg] to yield one like [app body' arg']. Since the
@@ -619,7 +615,7 @@ The rest of the cases are similar. *)
     - inversion H.
   Qed.
 
-(** **** noholes_holier_means_eq *)
+(** *** noholes_holier_means_eq *)
 
 (** The way reflexivity is defined for the holier relation means that
 any expression without holes [e] that's holier than another
@@ -667,8 +663,9 @@ expressions with subexpressions step their subexpressions until they
 become values. While the expression as a whole has not completely
 changed shape, it has nevertheless made a step. The following few
 lemmas cover the cases for applications, conditionals ([test]s), and
-marked expressions TODO: mention the lack of an evaluation context
-making these necessary *)
+marked expressions. In a richer language, evaluation contexts could
+be used to avoid an explosion of similar lemmas for each possible
+expression with subexpressions. *)
 
 (** Bodies of applications (essentially function bodies) are reduced
 as much as possible before the subtitution of the argument is
@@ -724,17 +721,6 @@ containing no holes, [e'] must also eventually step to [f]. *)
 
 (** *** Single-step Version *)
 
-(** It should be mentioned at this point that a mistake was
-discovered in the approach to proving this theorem late along the
-process. What follows is a slightly weaker of the monotonicity
-theorem as stated above, since the first expression [e] must take
-exactly _one_ step to arrive at the common expression [f]. It was
-thought that proving the version with multi-step would be done by
-induction on the stepping relation [e -->* f], which is where this
-single-step lemma would come in. As will be shown, though, this
-approach is flawed. Nevertheless, it is worth walking through the
-structure of the below lemma. *) (** TODO: why? or maybe move below? *)
-
 (** The proof begins with induction on the holier relation [e <<
 e']. Some of the cases are rather straightforward. *)
 
@@ -745,7 +731,8 @@ e']. Some of the cases are rather straightforward. *)
 
 - In the event that [e << e'] because [e] is a hole, an implicit
   contradiction is assumed in the premises since holes don't step to
-  any expression under the [step] relation.
+  any expression under the [step] relation. The conclusion is
+  therefore vacuously true.
 
 - Abstractions are similar; since they're values, there's also
   nothing for them to step to.
@@ -773,10 +760,9 @@ f]. While the proof may be rather long, most of the cases proceed
 fairly similarly to proof of the marked expression component. The
 more interesting case of applications stepping to the substitution
 result will be given in more detail, while the rest of the proofs are
-omitted for brevity. *)
-
-(** The application case proceeds by considering the possible ways
-that [e] (of the form [app body arg] can step to [f].
+omitted for brevity. The application case proceeds by considering the
+possible ways that [e], of the form [app bodye arge], can step to
+[f].
 
   - Let us first examine the case where the body of the application
     [e = app bodye arge] takes a step. Under this scenario, [f] must
@@ -791,18 +777,18 @@ that [e] (of the form [app body arg] can step to [f].
     At this stage we are left to show that [app bodye' arge' -->* app
     bodyf arge']. We use [bodystepsappsteps] to reduce this to
     showing that [bodye' -->* bodyf], which is given by the first
-    inductive hypothesis ( *forall* f, noholes f *->* bodye <<-->>>
-    f *->* bodye' <<-->>> f).
+    inductive hypothesis ([forall x, noholes x -> bodye --> x ->
+    bodye' --> x]).
 
   - Now assume the step from [e] to [f] was done by lifting the
     security class marking the application body up to the top
     level. Then [f] is of the form [marked class (app bodyf argf)],
-    [bodyf = bodye], and [argf = arge]. Similarly to the proof
-    section immediately above, it can be derived from [noholes f],
-    these equivalences, and the [e << e'] assumption that [argf
-    = arge'] and [bodyf = bodye']. [app (marked class bodye') arge'
-    -->* marked class (app bodye' arge')] then becomes an instance of
-    the [step] lifting rule for applications.
+    [bodyf = bodye], and [argf = arge]. Similar to the proof section
+    immediately above, it can be derived from [noholes f], these
+    equivalences, and the [e << e'] assumption that [argf = arge']
+    and [bodyf = bodye']. [app (marked class bodye') arge' -->*
+    marked class (app bodye' arge')] then becomes an instance of the
+    [step] lifting rule for applications.
 
   - The final case to be considered for the event that [e] is an
     application is if [f] is the result of [e] stepping by
@@ -834,9 +820,7 @@ that [e] (of the form [app body arg] can step to [f].
       going unused, [arge'] is irrelevant and [bodye = bodye'
       = f]. This case reduces to showing that the step from [e'] to
       [f] amounts to a discarding of the application's argument and
-      retaining of the body. TODO: but how did we know that there
-      would only be one step between [e'] and [f] and choose to apply
-      multi_R earlier on?
+      retaining of the body. 
 *)
 
   Lemma monotonicity_single_step : forall e e' f,
@@ -909,17 +893,6 @@ that [e] (of the form [app body arg] can step to [f].
 
 (** *** Full Version *)
 
-(** As mentioned previously, an unfortunate problem arises when
-trying to use the [monotonicity_single_step] proven above to prove
-the full [monotonicity] lemma below: as it turns out, the assertion
-is simply too weak. When induction is done on the multistep relation
-from [e] to [f] (i.e. the [e -->* f] line), it becomes necessary to
-prove that there exists a middle expression [m] such that [e --> m]
-and [m -->* f]. However, there is no guarantee that this middle
-expression satisfies the [noholes] proposition and therefore the
-[monotonicity_single_step] lemma no longer applies. Below is the
-statement for how monotonicity is stated in Coq. TODO: "Method Flaws and Future Fixes"? *)
-
   Lemma monotonicity : forall e e' f,
     noholes f ->
     e << e' ->
@@ -933,7 +906,19 @@ statement for how monotonicity is stated in Coq. TODO: "Method Flaws and Future 
     - intros. eapply monotonicity_single_step in H0.
       + apply IHmulti; auto.
   Admitted.
-  
+
+(** It should be mentioned at this point that a mistake was
+discovered in the approach to proving this theorem late along the
+process. An unfortunate problem arises when trying to use the
+[monotonicity_single_step] proven above to prove the full
+[monotonicity] lemma below: as it turns out, the assertion is simply
+too weak. When induction is done on the multistep relation from [e]
+to [f], it becomes necessary to prove that there exists a middle
+expression [m] such that [e --> m] and [m -->* f]. However, there is
+no guarantee that this middle expression satisfies the [noholes]
+proposition and therefore the [monotonicity_single_step] lemma no
+longer applies. *)
+
 (** One approach that was considered for remedying this problem is
 to reverse the induction principle. Concretely speaking, we could
 take the same approach as outlined above with the middle expression
@@ -943,7 +928,11 @@ take the same approach as outlined above with the middle expression
 information necessary to complete the proof, namely that the
 expression [m] that [e] steps to is still holier than the expression
 [m'] that [e'] steps to, since [monotonicity_single_step] requires in
-its premises that [e << f]. *)
+its premises that [e << f]. The correct way to fix these issues
+involes restating [monotonicity_single_step] to remove the
+requirement that both [e] and [e'] step to the same
+expression. Additionally, it shouldn't yet be required that [f] not
+have holes. Such a lemma looks like this: *)
 
 (* begin hide *)
   Lemma multi_ind_rev :
@@ -969,12 +958,6 @@ its premises that [e << f]. *)
   Admitted.
 (* end hide *)
   
-(** The correct way to fix these issues involes restating
-[monotonicity_single_step] to remove the requirement that both [e]
-and [e'] step to the same expression. Additionally, it shouldn't yet
-be required that [f] not have holes. Such a lemma would look like
-this: *)
-
   Lemma monotonicity_single_step' : forall e e' f,
     e << e' ->
     e --> f ->
@@ -995,16 +978,15 @@ introduced corresponding to its role in the above lemma. *)
   Proof.
   Admitted.
 
-
 (** [monotonicity] now follows from the above two lemmas with the
-requirement of [f] not having holes. Since [monotonicity'] gives as
-a result that [f << f'], the only way this could be possible is if [f
-= f'] by [noholes_holier_means_eq], which is equivalent to the
-original statement of [monotonicity]. *)
+requirement of [f] not having holes reinstated. Since [monotonicity']
+gives as a result that [f << f'], the only way this could be possible
+is if [f = f'] by [noholes_holier_means_eq], which is equivalent to
+the original statement of [monotonicity]. *)
   
 (**  Unfortunately, the problems related to the weakness of
-[monotonicity_single_step] as originally stated were encountered 
-too late in the semester to allow for time to reconstruct the entire
+[monotonicity_single_step] as originally stated were encountered too
+late in the semester to allow for time to reconstruct the corrected
 proofs in Coq, which is disappointing. *)
 
 (** ** Lemmas and Definitions for Stability *)
@@ -1020,8 +1002,7 @@ _pruning_ a list of labels (security classes) from an expression
 [e]. To prune an expression of a labeled security class [lab] is to
 replace all marked expressions [marked class body] where [class
 = lab] with holes. The replacement descends into subexpressions
-recursively. Concretely, the formal definitions in Coq are shown
-below for clarification. *)
+recursively. *)
 
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
@@ -1094,11 +1075,13 @@ argument and body before making the substitution. *)
 
 (** ** Stability *)
 
-(** Fortunately, while monotonicity was not able to be
+(** *** Single-step Version *)
+
+(** Fortunately, while monotonicity was not able to be fully
 machine-verified to due to time constraints, stability was, despite
 a similar issue in originally stating the sub-lemmas
-inadequately. TODO: Should walk through proof of
-stabilitysinglestep_tooweak? *)
+inadequately. Originally, the same flawed approach was taken by
+stating the single-step lemma as so: *)
 
 (* Stability single step incorrectly stated & proven *)
   Lemma stabilitysinglestep_tooweak : forall e f lab,
@@ -1143,67 +1126,16 @@ stabilitysinglestep_tooweak? *)
         inversion H1; subst. congruence.
   Qed.
 
-(** *** Single-step Version *)
-
-(** The (corrected) proof for stability is conducted similarly to
-that for monotonicity: first, the theorem is rewritten with
-    a single-step relation replacing the multistep and then induction
-    is used on the multistep assumption with this weaker restatement
-    as a backdrop. *)
-
-(** The single-step lemma shows that whenever an expression [e] steps
-to another expression [f] in a single step, either the prune of [e]
-steps to the prune of [f] or the prune of [f] is holier than the
-prune of the term it came from, [e]. For the purposes of clarity, the
-proofs for stability and its related lemmas are restricted to the
-pruning of a single label rather than a list; the full proof would be
-significantly longer and add little value. *)
-
-(** The proof is by induction on the step from [e] to [f]. Many of
-the cases are fairly similar. A few have been picked out to
-demonstrate the process. Since the value of the security class
-identified by the label is irrelevant here and the same in all cases,
-the "[_[lab]]" for prune notation is omitted. *)
-
-(**
-
-- Consider the case where [e --> f] because [e] is of the form [app
-  (abs x T body) arg] and [f] is the result of substituting [arg]
-  into the abstraction. Since the structure of the result is
-  necessarily different than that of an application and the holier
-  relation requires congruent expressions, the possibility of [\\
-  f // << \\ e //] can be eliminated.
-
-  Partially applying the [prune] function on these expressions means
-  we must show that [app (abs x T \\body//) \\arg// -->* \\subres//]
-  where [[arg // x] body is subres]. This amounts to showing that
-  [[\\arg// // x] \\body// is \\subres//] as defined in the [step]
-  relation. The [prunesubst_commute] lemma given above takes care of
-  the rest.
-
-- The case where [e --> f] because by reducing a marked body ([marked
-  class body --> marked class body']) is more interesting. Nothing
-  can be said yet as to which disjunct will apply, because it depends
-  on whether the marked expression is of the security class to be
-  pruned. Consider first that it is. Then [\\marked class bodye//
-  -->* \\marked class bodyf//] is trivial; we're showing that [hole
-  -->* hole]. So now assume it's not. The inductive hypothesis gives
-  us the relationship between [bodye] and [bodyf], so the two
-  cases are examined separately.
-
-  - First consider that [\\bodye// -->* \\bodyf//]. In this case,
-    [markedbodystepstermsteps] makes it easy to show the left
-    disjunct in the conclusion is true: [marked class \\bodye// -->*
-    marked class \\bodyf//].
-
-  - Now assume [\\bodyf// << \\bodye//]. The [<<] relation between
-    marked terms requires exactly this, so the right disjunct is
-    true: [marked class \\bodyf// << marked class \\bodye//].
-
-The rest of the cases follow in a similar fashion by case-splitting
-on the inductive hypothesis and whether [class = lab] if needed.
-
-*)
+(** The following single-step version is slightly different than
+this, for reasons similar to the problems encountered with
+    monotonicity. This single-step lemma shows that whenever an
+    expression [e] steps to another expression [f] in a single step,
+    either the prune of [e] steps to the prune of [f] or the prune of
+    [f] is holier than the prune of the term it came from, [e]. For
+    the purposes of clarity, the proofs for stability and its related
+    lemmas are restricted to the pruning of a single label rather
+    than a list; the full proof would be significantly longer and add
+    little value. *)
 
   Lemma stabilitysinglestep : forall e f lab,
     e --> f ->
@@ -1238,36 +1170,60 @@ on the inductive hypothesis and whether [class = lab] if needed.
         constructor; auto.
   Qed.
 
+(** The proof is by induction on the step from [e] to [f]. Many of
+the cases are fairly similar. A few have been picked out to
+demonstrate the process. Since the value of the security class
+identified by the label is irrelevant here and the same in all cases,
+the "[_[lab]]" for prune notation is omitted. *)
+
+(**
+
+- Consider the case where [e --> f] because [e] is of the form [app
+  (abs x T body) arg] and [f] is the result of substituting [arg]
+  into the abstraction. Since the structure of the result is
+  necessarily different than that of an application and the holier
+  relation requires congruent expressions, the possibility of [\\
+  f // << \\ e //] can be eliminated.
+
+  Partially applying the [prune] rules to these expressions means we
+  must show that [app (abs x T \\body//) \\arg// -->* \\subres//]
+  where [[arg // x] body is subres]. This amounts to showing that
+  [[\\arg// // x] \\body// is \\subres//] as defined in the [step]
+  relation. The [prunesubst_commute] lemma given above takes care of
+  the rest.
+
+- The case where [e --> f] by reducing a marked body ([marked class
+  body --> marked class body']) is more interesting. Nothing can be
+  said yet as to which disjunct will apply, because it depends on
+  whether the marked expression is of the security class to be
+  pruned. Consider first that it is. Then [\\marked class bodye//
+  -->* \\marked class bodyf//] is trivial; we're showing that [hole
+  -->* hole] (or that [hole << hole], which is also true). So now
+     assume it's not. The inductive hypothesis gives us the
+     relationship between [bodye] and [bodyf], so the two cases are
+     examined separately.
+
+  - First consider that [\\bodye// -->* \\bodyf//]. In this case,
+    [markedbodystepstermsteps] makes it easy to show the left
+    disjunct in the conclusion is true: [marked class \\bodye// -->*
+    marked class \\bodyf//].
+
+  - Now assume [\\bodyf// << \\bodye//]. The [<<] relation between
+    marked terms requires exactly this, so the right disjunct is
+    true: [marked class \\bodyf// << marked class \\bodye//].
+
+The rest of the cases follow in a similar fashion by case-splitting
+on the inductive hypothesis and whether [class = lab] if needed.
+
+*)
+
 (** *** Full Version *)
 
 (** Stability is the property where, when any expression [e] that
 steps to an expression [f] without holes or labels to be pruned, the
-prune of [e] will also step to [f].
+prune of [e] will also step to [f]. *)
 
-Proof for the stability theorem is done here by induction on the [e
--->* f] assumption. Most of the legwork is already accomplished by
-   [monotonicity]. Note that [e -->* f] is a multistep relation, not
-   a single step, and so the base case is that zero steps are
-   taken. If zero steps are taken from [e] to [f], then [e = f] and
-   the conclusion is trivial. If at least one step is taken, [e -->
-   m] for some term [m] and we can assume [m -->* f]. We must show
-   that [\\e// -->* f].
-
-Since we have that [e --> m], [stabilitysinglestep] gives us that
-either [\\e// -->* \\m//] or [\\m// << \\e//].
-
-    - If [\\e// -->* \\m//], then the transitivity of [-->*] and the
-      inductive hypothesis give that [\\e// -->* \\m// -->* \\f//].
-
-    - Now presume [\\m// << \\e//]. It's already given that [f] has
-      no holes and [m -->* f]. All that's needed to apply the
-      [monotonicity] theorem and complete the proof is to show that
-      [\\m// -->* f], but this is exactly what the inductive
-      hypothesis provies and so we are done.
-
-test *)
-
-  Lemma stabilitySingleLabel : forall e f lab,
+  Lemma stability : forall e f lab,
     noholes f ->
     e -->* f ->
     (\\ f //_(lab :: nil)) = f ->
@@ -1284,28 +1240,32 @@ test *)
       + eapply monotonicity; eauto.
   Qed.
 
-(** TODO: bother with showing the incomplete proof for multiple
-labels? *)
+(** Proof for the stability theorem is done here by induction on the
+    [e -->* f] assumption. Most of the legwork is already
+    accomplished by [monotonicity]. Note that [e -->* f] is
+    a multistep relation, not a single step, and so the base case is
+    that zero steps are taken. If zero steps are taken from [e] to
+    [f], then [e = f] and the conclusion is trivial. If at least one
+    step is taken, [e --> m] for some term [m] and we can assume         [m -->* f]. We must show that [\\e// -->* f].  Since we have that    [e --> m], [stabilitysinglestep] gives us that either                [\\e// -->* \\m//] or [\\m// << \\e//].
 
-  Lemma stability : forall e f labs,
-    noholes f ->
-    e -->* f ->
-    (\\ f //_labs) = f ->
-    \\ e //_labs -->* f.
-  Proof.
-    intros. induction H0.
-    - rewrite H1. apply multi_refl.
-    - apply multi_step with y0.
-  Admitted.
+    - If [\\e// -->* \\m//], then the transitivity of [-->*] and the
+      inductive hypothesis give that [\\e// -->* \\m// -->* \\f//
+      = f].
 
+    - Now presume [\\m// << \\e//]. It's already given that [f] has
+      no holes and [m -->* f]. All that's needed to apply the
+      [monotonicity] theorem and complete the proof is to show that
+      [\\m// -->* f], but this is exactly what the inductive
+      hypothesis provies and so we are done.
+
+*)
 
 (** ** Non-interference *)
 
 (** Together, stability and monotonicity (along with the guarantees
 of the type system) form the majority of the proof for
-non-interference. TODO: write/explain how non-interference can be
-derived from monotonicity and stabilty (what it is is already
-introduced above) *)
+non-interference. To restate the theorem, it's the property that
+TODO: unsure how to state this from the slides *)
 
 (** * References and Related Work *)
 
