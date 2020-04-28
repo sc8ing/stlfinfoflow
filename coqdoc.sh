@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# coqc -Q . STLCIF Maps.v Smallstep.v Stlc.v
+
 coqdoc Stlc.v --latex \
     --no-index \
     -d ./doc \

@@ -14,7 +14,7 @@ for external analysis and providing compile-time checking. The
 various techniques for proving these assertions are sound and well
 documented. The goal of this thesis is to formally verify the
 integrity of one of these proofs using the proof management system
-Coq.  *)
+Coq. *)
 
 
 (** * Background *)
@@ -1590,3 +1590,4 @@ TODO: unsure how to state this from the slides *)
 (* begin hide *)
 End STLC.
 (* end hide *)
+
