@@ -5,7 +5,7 @@
 with sensitive information. There are numerous ways to protect the
 integrity of data and manage the permissions as to how it can be
 accessed, but most rely on the programmer to correctly implement
-- a task which can become exceedingly difficult to ensure is met
+– a task which can become exceedingly difficult to ensure is met
 satisfactorily as a project grows. Information flow analysis provides
 a means to formally guarantee that certain constraints are met. By
 using a type-based approach, these assertions can be embedded in
@@ -132,12 +132,38 @@ to simply-typed lambda calculus, with two notable additions: [hole]
 and [marked]. The latter is the purely-syntactical way for
 a programmer to mark an expression as belonging to one of two
 security classes, either [High] or [Low]. Types, security classes,
-and expressions are defined straightforwardly in Coq as the inductive
-data structures shown below. *)
+and expressions are defined straightforwardly as so: *)
 
+(** 
+
+- DataType ::= << Bool | Arrow DataType DataType >>
+
+- SecClass ::= << High | Low >>
+
+- Exp ::=
+
+    | var string
+
+    | app Exp Exp
+
+    | abs string DataType Exp
+
+    | tru
+
+    | fls
+
+    | test Exp Exp Exp
+
+    | marked SecClass Exp
+
+    | hole
+*)
+
+(* begin hide *)
   Inductive data_type : Type :=
     | Bool  : data_type
     | Arrow : data_type -> data_type -> data_type.
+(* end hide *)
 
 (* begin hide *)
   Definition data_type_eq_dec :
@@ -145,9 +171,11 @@ data structures shown below. *)
   Proof. decide equality. Defined.
 (* end hide *)
 
+(* begin hide *)
   Inductive sec_class : Type :=
     | High : sec_class
     | Low : sec_class.
+(* end hide *)
 
 (* begin hide *)
   Definition sec_class_eq_dec :
@@ -155,6 +183,7 @@ data structures shown below. *)
   Proof. decide equality. Defined.
 (* end hide *)
 
+(* begin hide *)
   Inductive exp : Type :=
     | var : string -> exp
     | app : exp -> exp -> exp
@@ -164,6 +193,7 @@ data structures shown below. *)
     | test : exp -> exp -> exp -> exp
     | marked : sec_class -> exp -> exp
     | hole.
+(* end hide *)
 
 (* begin hide *)
   Open Scope string_scope.
@@ -184,6 +214,33 @@ one that has terminated successfully, a [value] proposition is
 introduced. Values are expressions that are well-typed but cannot
 take a step. *)
 
+(** %
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_abs)}
+    \UnaryInfC{value (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_tru)}
+    \UnaryInfC{value tru}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_fls)}
+    \UnaryInfC{value fls}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{value val}
+\RightLabel{(v\_markedval)}
+    \UnaryInfC{value (marked class val)}
+\end{prooftree}
+% *)
+
+(* begin hide *)
   Inductive value : exp -> Prop :=
     | v_abs :
         forall x T t,
@@ -195,6 +252,7 @@ take a step. *)
     | v_markedval :
         forall class val,
         value val -> value (marked class val).
+(* end hide *)
 
 (* begin hide *) 
   Hint Constructors value.
@@ -208,6 +266,67 @@ a variable that may or may not exist in [e]. The statement can be
 read as "the result of substituting [v] for [x] in [e] yields
 [e']". The formal rules are detailed below. *)
 
+(** %
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_var\_eq)}
+    \UnaryInfC{[v // x] (var x) is s}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{y $\neq$ x}
+    \RightLabel{(s\_var\_neq)}
+    \UnaryInfC{[v // x] (var y) is (var y)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_abs\_eq)}
+    \UnaryInfC{[v // x] (abs x T body) is (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{x $\neq$ y}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_abs\_neq)}
+    \BinaryInfC{[v // x] (abs y T body) is (abs y T body')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \AxiomC{[v // x] arg is arg'}
+    \RightLabel{(s\_app)}
+    \BinaryInfC{[v // x] (app body arg) is (app body' arg')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_tru)}
+    \UnaryInfC{[v // x] tru is tru}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_fls)}
+    \UnaryInfC{[v // x] fls is fls}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] cond is cond'}
+    \AxiomC{[v // x] b1 is b1'}
+    \AxiomC{[v // x] b2 is b2'}
+    \RightLabel{(s\_test)}
+    \TrinaryInfC{[v // x] (test cond b1 b2) is (test cond' b1' b2')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_marked)}
+    \UnaryInfC{[v // x] (marked class body) is (marked class body')}
+\end{prooftree}
+*)
+
+(* begin hide *)
   Reserved Notation "'[' v '//' x ']' e 'is' r" (at level 40).
   Inductive substi (x : string) (s : exp) : exp -> exp -> Prop :=
     | s_var_eq :
@@ -246,6 +365,7 @@ read as "the result of substituting [v] for [x] in [e] yields
         substi x s hole hole
       where "'[' v '//' x ']' e 'is' r" := (substi x v e r)
   .
+(* end hide *)
 
   (* begin hide *)
   Hint Constructors substi.
@@ -260,6 +380,57 @@ that the expression [e] steps to [e'] in exactly one step. [e -->*
 e'] is then used to denote a multi-step relation between [e] and [e']
 or zero or more steps. The stepping rules are as follows: *)
 
+(** %
+\begin{prooftree}
+    \AxiomC{[arg // x] body is subres}
+    \RightLabel{(ST\_AppAbs)}
+    \UnaryInfC{app (abs x T body) arg $\texttt{-->}$ subres}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_App1)}
+    \UnaryInfC{app body arg \texttt{-->} app body' arg}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestTru)}
+    \UnaryInfC{test tru b1 b2 \texttt{-->} b1}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestFls)}
+    \UnaryInfC{test fls b1 b2 \texttt{-->} b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{-->} cond'}
+    \RightLabel{(ST\_Test)}
+    \UnaryInfC{test cond b1 b2 \texttt{-->} test cond' b1 b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftApp)}
+    \UnaryInfC{app (marked class body) arg \texttt{-->} marked class (app body arg)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftTestCond)}
+    \UnaryInfC{test (marked class cond) b1 b2 \texttt{-->} marked class (test cond b1 b2)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_MarkReduce)}
+    \UnaryInfC{marked class body \texttt{-->} marked class body'}
+\end{prooftree}
+*)
+
+(* begin hide *)
   Reserved Notation "t1 '-->' t2" (at level 40).
   Inductive step : exp -> exp -> Prop :=
     | ST_AppAbs :
@@ -299,6 +470,7 @@ or zero or more steps. The stepping rules are as follows: *)
         (marked class body) --> (marked class body')
 
     where "t1 '-->' t2" := (step t1 t2).
+(* end hide *)
 
 (* begin hide *)
   Hint Constructors step.
@@ -323,6 +495,54 @@ possible within the limitations of Coq's syntactical restraints, the
 notation [Gamma |- e \in T] is used to signify that expression [e] is
         has type [T] under a typing context [Gamma]. *)
 
+(** %
+\begin{prooftree}
+    \AxiomC{$\Gamma(x) =$ T}
+    \RightLabel{(T\_Var)}
+    \UnaryInfC{$\Gamma\vdash$ var x : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma[\texttt{"x"}:=$T11$](e) \vdash$ t12 : T12}
+    \RightLabel{(T\_Abs)}
+    \UnaryInfC{$\Gamma\vdash$ abs x T11 t12 : Arrow T11 T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : Arrow T11 T12}
+    \AxiomC{$\Gamma\vdash$arg : T11}
+    \RightLabel{(T\_App)}
+    \BinaryInfC{$\Gamma\vdash$ app body arg : T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Tru)}
+    \UnaryInfC{$\Gamma\vdash$ tru : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Fls)}
+    \UnaryInfC{$\Gamma\vdash$ fls : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$cond : Bool}
+    \AxiomC{$\Gamma\vdash$b1 : T}
+    \AxiomC{$\Gamma\vdash$b2 : T}
+    \RightLabel{(T\_Test)}
+    \TrinaryInfC{$\Gamma\vdash$ test cond b1 b2 : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : T}
+    \RightLabel{(T\_Marked)}
+    \UnaryInfC{$\Gamma\vdash$ marked class body : T}
+\end{prooftree}
+*)
+
+(* begin hide *)
   Inductive has_dtype : context -> exp -> data_type -> Prop :=
     | T_Var : forall Gamma x T,
         Gamma x = Some T ->
@@ -352,6 +572,7 @@ notation [Gamma |- e \in T] is used to signify that expression [e] is
         Gamma |- e \in T ->
         Gamma |- marked class e \in T
     where "Gamma '|-' t '\in' T" := (has_dtype Gamma t T).
+(* end hide *)
 
 (* begin hide *)
   Hint Constructors has_dtype.
@@ -395,6 +616,48 @@ Also given is the proposition [noholes] (not shown here). As would be
 expected, an expression [e] satisfies [noholes] if it is not a hole
 and none of its sub-expressions are holes. *)
 
+(** %
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_refl)}
+    \UnaryInfC{e \texttt{<<} e}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_hole)}
+    \UnaryInfC{hole \texttt{<<} e}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \AxiomC{arg \texttt{<<} arg'}
+    \RightLabel{(H\_app)}
+    \BinaryInfC{app body arg \texttt{<<} app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_abs)}
+    \UnaryInfC{abs x T body \texttt{<<} abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{<<} cond'}
+    \AxiomC{b1 \texttt{<<} b1'}
+    \AxiomC{b2 \texttt{<<} b2'}
+    \RightLabel{(H\_test)}
+    \TrinaryInfC{test cond b1 b2 \texttt{<<} test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_marked)}
+    \UnaryInfC{marked class body \texttt{<<} marked class body'}
+\end{prooftree}
+*)
+
+(* begin hide *)
   Inductive holier : exp -> exp -> Prop :=
     | H_refl :
         forall e,
@@ -428,6 +691,7 @@ and none of its sub-expressions are holes. *)
         (marked class body) << (marked class body')
 
     where "a << b" := (holier a b).
+(* end hide *)
 
 (* begin hide *)
   Hint Constructors holier.
@@ -990,12 +1254,61 @@ introduced and several stepping-stone lemmas are proven. *)
 (** *** Pruning *)
 
 (** The notation [\\ e //_ labs] is used to symbolize the result of
-_pruning_ a list of labels (security classes) from an expression
+"pruning" a list of labels (security classes) from an expression
 [e]. To prune an expression of a labeled security class [lab] is to
 replace all marked expressions [marked class body] where [class
 = lab] with holes. The replacement descends into sub-expressions
-recursively. *)
+recursively. For ease of reading, the label list is omitted when for
+all cases except the [P_marked] ones where it becomes relevant. *)
 
+(** %
+\newcommand\prune[1]{
+    \textbackslash\textbackslash #1//
+}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \AxiomC{\prune{arg} = arg'}
+    \RightLabel{(P\_app)}
+    \BinaryInfC{\prune{app body arg} = app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \RightLabel{(P\_abs)}
+    \UnaryInfC{\prune{abs x T body} = abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{cond} = cond'}
+    \AxiomC{\prune{b1} = b1'}
+    \AxiomC{\prune{b2} = b2'}
+    \RightLabel{(P\_test)}
+    \TrinaryInfC{\prune{test cond b1 b2} = test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class = lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_eq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = hole}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class $\neq$ lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_neq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = marked class body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{value v}
+    \RightLabel{(P\_val)}
+    \UnaryInfC{\prune{v} = v}
+\end{prooftree}
+*)
+
+(* begin hide *)
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
     | app func arg =>
@@ -1019,6 +1332,7 @@ recursively. *)
 
   Definition prune (allowed : list sec_class) (e : exp) : exp :=
     List.fold_left (fun e' lab => prune_single lab e') allowed e.
+(* end hide *)
 
 (* begin hide *)
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).

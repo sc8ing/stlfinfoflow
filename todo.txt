@@ -1,16 +1,7 @@
-- styling
-    - stylized line bar layout
-        x values
-        x substitution semantics
-        x smallstep
-        x typing
-        x holier relation
-        x pruning
-    - ::= style for syntax
-- subprunenoorder, prunesubst_commute proofs
 - table of contents
 - fix links
 - monotonicity fixed in coq
+- subprunenoorder, prunesubst_commute proofs
 
 - joe questions
     - in TODOs in text:
