@@ -1,0 +1,1305 @@
+\documentclass[12pt]{report}
+\usepackage[]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fullpage}
+\usepackage{coqdoc}
+\usepackage{amsmath,amssymb}
+\usepackage{url}
+\usepackage{bussproofs}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{titlesec}
+\usepackage{lipsum}
+\usepackage{setspace}
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries}{}{0pt}{\Huge}
+
+\def\fCenter{{\mbox{\Large$\rightarrow$}}}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+
+\begin{spacing}{1.5}
+    \vspace*{\fill}
+\end{spacing}
+
+\begin{spacing}{2.5}
+    \textbf{\Large Title  I forget}\\[0.5cm]
+    \vspace*{\fill}
+\end{spacing}
+
+\begin{spacing}{1.15}
+    \textbf{\large Jacob Bennett}
+    \date{}
+\end{spacing}
+
+\end{center}
+\end{titlepage}
+
+
+
+
+% so chapters don't start on another page
+\let\clearpage\relax
+
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This file has been automatically generated with the command
+%% coqdoc Stlc.v --latex --no-index -d ./doc --title Formally Proving Validity for Type-Based Information Flow --table-of-contents --preamble \usepackage{bussproofs} \usepackage{amssymb} \usepackage{latexsym} \def\fCenter{{\mbox{\Large$\rightarrow$}}} -g 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \coqlibrary{Stlc}{Library }{Stlc}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\end{coqdoccode}
+\chapter{Abstract}
+
+
+
+ Safely securing data is always a priority for systems that work with
+ sensitive information. There are numerous ways to protect the
+ integrity of data and manage the permissions as to how it can be
+ accessed, but most rely on the programmer to correctly implement
+ – a task which can become exceedingly difficult to ensure is met
+ satisfactorily as a project grows. Information flow analysis
+ provides a means to formally guarantee that certain constraints are
+ met. By using a type-based approach, these assertions can be
+ embedded in a programming language's type system directly, thus
+ removing the need for external analysis and providing compile-time
+ checking. The various techniques for proving these assertions are
+ sound and well documented. The goal of this thesis is to formally
+ verify the integrity of one of these proofs using the proof
+ management system Coq. 
+
+\chapter{Background}
+
+
+
+\section{Information Flow}
+
+
+
+ When a program is executed, bits of data are stored in various
+regions of the computer's memory. Some of this information may be of
+greater importance, such as in a voting system where it must be
+ensured that the development of publicly-available aggregate data of
+candidate totals cannot be used to recover information about who
+voted. (TODO better example?). In such cases it's not only critical
+to ensure that the program does not accidentally leak sensitive
+information to low-security areas, but also that implicit information
+regarding the structure or content of sensitive data remains solely
+in high-security areas as well.
+
+
+For example, a simple imperative program with high-security data in
+some variable \coqdocvar{x} and low-security data in \coqdocvar{y} of the following form
+may not explicitly copy sensitive data to a low-security area, but it
+does reveal information about the contents of this data, which an
+attacker may or may not eventually accumulate enough of in
+a real-world scenario to deduce significant details about the
+contents of \coqdocvar{x}.
+
+
+\begin{verbatim}
+  x := getSecretNumber()
+  y := 2
+  if x > 5
+    y := y - 1
+  else
+    y := y + 1
+\end{verbatim}
+
+
+ Various conceptions and degrees of information flow have been
+explored in the literature. For the purposes of this paper, all
+expressions in a language can be assigned a security level of either
+\coqdocvar{High} or \coqdocvar{Low}. The assertion that the flow of information in
+a program is secure can then be stated as follows: for any two sets
+of high-security inputs \coqdocvar{H1}, \coqdocvar{H2} and low-security input \coqdocvar{L}, the
+low-security result of executing a program with \coqdocvar{H1} and \coqdocvar{L} as its
+initial states is identical to executing it with \coqdocvar{H2} and \coqdocvar{L} as its
+initial states. This proposition is referred to as
+non-interference. TODO: how to state this property for the way this
+language is set up? 
+
+\section{The Proof Assistant Coq}
+
+
+
+ Coq is an interactive theorem prover used to assist in formal
+proofs in a logical framework. It includes both a custom programming
+language Gallina with advanced implementations of type theory as well
+as a language for constructing machine-checked proofs. Coq is often
+used to prove properties of programs and languages, but is also used
+for intricate mathematical proofs and other related domains.
+
+
+Part of what makes a system like Coq so powerful is the guarantees it
+can provide for correctness. Not only does the specification of the
+language itself have the weak normalization property (meaning
+programs cannot diverge), but it also allows for complicated
+arguments to be constructed with many parts. As such, it lends itself
+naturally to areas of computer science where extreme rigor is
+necessary, such as encryption or compiler verification. Areas related
+to the effectiveness of security techniques, such as information
+flow, are also strong candidates for machine-checked proofs in order
+to increase confidence in the program.
+
+
+The reader should keep in mind that, while the proofs given in this
+paper are written out in a conventional style, every step given is
+backed by the formal guarantees of the Coq theorem assistant in
+a machine-checked proof, which is ultimately what this paper is about
+and not merely the results of the proofs themselves, which were
+already believed to probably be true. 
+
+\section{About the Proof}
+
+
+
+ The formal proof for type-based information flow presented here
+is largely based off the work of François Pottier and his
+presentation at The National Institute for Research in Computer
+Science and Automation (INRIA). Some modifications have been made for
+practical reasons – such as the decision not to use evaluation
+contexts and the inclusion of different types in the language – but
+these are unimportant to the overall goal and the essence of the
+conclusion is the same. 
+
+\chapter{The Language}
+
+
+
+ We begin by specifying a simple programming language about which
+to construct the proof. For the purposes of clarity, it is rather
+bare bones. More involved languages for practical use in the real
+world would nevertheless follow the same fundamental structure,
+simply with more nuances. The critical detail of whatever language is
+used is that it must be typed. (TODO: is this true?). \begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\section{Syntax}
+
+
+
+ The language contains only booleans as a primitive data type,
+along with single-argument functions. Expressions are vaguely similar
+to simply-typed lambda calculus, with two notable additions: \coqdocvar{hole}
+and \coqdocvar{marked}. The latter is the purely-syntactical way for
+a programmer to mark an expression as belonging to one of two
+security classes, either \coqdocvar{High} or \coqdocvar{Low}. Types, security classes,
+and expressions are defined straightforwardly as so: 
+
+
+
+
+\begin{itemize}
+\item  DataType ::= \texttt{Bool | Arrow DataType DataType }
+
+
+\item  SecClass ::= \texttt{High | Low }
+
+
+\item  Exp ::=
+
+
+    | var string
+
+
+    | app Exp Exp
+
+
+    | abs string DataType Exp
+
+
+    | tru
+
+
+    | fls
+
+
+    | test Exp Exp Exp
+
+
+    | marked SecClass Exp
+
+
+    | hole
+
+\end{itemize}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\section{Semantics}
+
+
+
+\subsection{Values}
+
+
+
+ In order to differentiate between a program that ``gets stuck'' and
+one that has terminated successfully, a \coqdocvar{value} proposition is
+introduced. Values are expressions that are well-typed but cannot
+take a step. 
+
+ 
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_abs)}
+    \UnaryInfC{value (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_tru)}
+    \UnaryInfC{value tru}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{}
+\RightLabel{(v\_fls)}
+    \UnaryInfC{value fls}
+\end{prooftree}
+
+\begin{prooftree}
+   \AxiomC{value val}
+\RightLabel{(v\_markedval)}
+    \UnaryInfC{value (marked class val)}
+\end{prooftree}
+ \begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{Substitutions}
+
+
+
+ Syntax for substitution semantics is introduced in the form [\coqdocvar{v}
+// \coqdocvar{x}] \coqdocvar{e} \coqdockw{is} \coqdocvar{e'} where \coqdocvar{v}, \coqdocvar{e} and \coqdocvar{e'} are expressions and \coqdocvar{x} is
+a variable that may or may not exist in \coqdocvar{e}. The statement can be
+read as ``the result of substituting \coqdocvar{v} for \coqdocvar{x} in \coqdocvar{e} yields
+\coqdocvar{e'}''. The formal rules are detailed below. 
+
+ 
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_var\_eq)}
+    \UnaryInfC{[v // x] (var x) is s}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{y $\neq$ x}
+    \RightLabel{(s\_var\_neq)}
+    \UnaryInfC{[v // x] (var y) is (var y)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_abs\_eq)}
+    \UnaryInfC{[v // x] (abs x T body) is (abs x T body)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{x $\neq$ y}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_abs\_neq)}
+    \BinaryInfC{[v // x] (abs y T body) is (abs y T body')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \AxiomC{[v // x] arg is arg'}
+    \RightLabel{(s\_app)}
+    \BinaryInfC{[v // x] (app body arg) is (app body' arg')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_tru)}
+    \UnaryInfC{[v // x] tru is tru}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(s\_fls)}
+    \UnaryInfC{[v // x] fls is fls}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] cond is cond'}
+    \AxiomC{[v // x] b1 is b1'}
+    \AxiomC{[v // x] b2 is b2'}
+    \RightLabel{(s\_test)}
+    \TrinaryInfC{[v // x] (test cond b1 b2) is (test cond' b1' b2')}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{[v // x] body is body'}
+    \RightLabel{(s\_marked)}
+    \UnaryInfC{[v // x] (marked class body) is (marked class body')}
+\end{prooftree}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+The reduction of expressions in the language is given in
+small-step semantics. All well-typed expressions can either take
+a step or are values. The notation \coqdocvar{e} --> \coqdocvar{e'} is introduced to mean
+that the expression \coqdocvar{e} steps to \coqdocvar{e'} in exactly one step. \coqdocvar{e} -->*
+\coqdocvar{e'} is then used to denote a multi-step relation between \coqdocvar{e} and \coqdocvar{e'}
+or zero or more steps. The stepping rules are as follows: 
+
+ 
+\begin{prooftree}
+    \AxiomC{[arg // x] body is subres}
+    \RightLabel{(ST\_AppAbs)}
+    \UnaryInfC{app (abs x T body) arg $\texttt{-->}$ subres}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_App1)}
+    \UnaryInfC{app body arg \texttt{-->} app body' arg}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestTru)}
+    \UnaryInfC{test tru b1 b2 \texttt{-->} b1}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestFls)}
+    \UnaryInfC{test fls b1 b2 \texttt{-->} b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{-->} cond'}
+    \RightLabel{(ST\_Test)}
+    \UnaryInfC{test cond b1 b2 \texttt{-->} test cond' b1 b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftApp)}
+    \UnaryInfC{app (marked class body) arg \texttt{-->} marked class (app body arg)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftTestCond)}
+    \UnaryInfC{test (marked class cond) b1 b2 \texttt{-->} marked class (test cond b1 b2)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_MarkReduce)}
+    \UnaryInfC{marked class body \texttt{-->} marked class body'}
+\end{prooftree}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\section{Typing}
+
+
+
+ The following relation is defined to type an expression and
+guarantee type safety. Any expression not satisfying the requirements
+of one of the constructors is ill-typed and therefore
+illegal. Constraining the amount of types in the language keeps this
+specification relatively short. Following convention as closely as
+possible within the limitations of Coq's syntactical restraints, the
+notation \coqdocvar{Gamma} \ensuremath{\vdash} \coqdocvar{e} \symbol{92}\coqdoctac{in} \coqdocvar{T} is used to signify that expression \coqdocvar{e} is
+        has type \coqdocvar{T} under a typing context \coqdocvar{Gamma}. 
+
+ 
+\begin{prooftree}
+    \AxiomC{$\Gamma(x) =$ T}
+    \RightLabel{(T\_Var)}
+    \UnaryInfC{$\Gamma\vdash$ var x : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma[\texttt{"x"}:=$T11$](e) \vdash$ t12 : T12}
+    \RightLabel{(T\_Abs)}
+    \UnaryInfC{$\Gamma\vdash$ abs x T11 t12 : Arrow T11 T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : Arrow T11 T12}
+    \AxiomC{$\Gamma\vdash$arg : T11}
+    \RightLabel{(T\_App)}
+    \BinaryInfC{$\Gamma\vdash$ app body arg : T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Tru)}
+    \UnaryInfC{$\Gamma\vdash$ tru : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Fls)}
+    \UnaryInfC{$\Gamma\vdash$ fls : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$cond : Bool}
+    \AxiomC{$\Gamma\vdash$b1 : T}
+    \AxiomC{$\Gamma\vdash$b2 : T}
+    \RightLabel{(T\_Test)}
+    \TrinaryInfC{$\Gamma\vdash$ test cond b1 b2 : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : T}
+    \RightLabel{(T\_Marked)}
+    \UnaryInfC{$\Gamma\vdash$ marked class body : T}
+\end{prooftree}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\chapter{The Proofs}
+
+
+
+ The given definitions of the language used here's syntax, typing
+rules, and small-step execution semantics is sufficient to prove the
+soundness of its information flow typing with marked
+expressions. A variety of propositions and lemmas used to construct
+the proof are first introduced, along with two larger theorems that,
+together, form the majority of the proof for non-interference, which
+is the ultimate goal. 
+
+\section{Lemmas and Definitions For Monotonicity}
+
+
+
+\subsection{Hole Definitions and the Holier Relation (<<)}
+
+
+
+ Holes are of expressions that, in essence, do not exist or
+have been removed for some reason. In the context of this paper,
+holes are introduced into expressions when they are stripped of all
+data consisting of a given security class (what's been termed
+``pruning'' and is detailed further on). The notion of an incomplete or
+holey`` expression and the relationship between expressions with
+    different numbers of holes provide a means of redaction of terms
+    that would otherwise violate the safety information flow typing
+    seeks to provide.
+
+
+An expression \coqdocvar{e} is holier than an expression \coqdocvar{e'} (written \coqdocvar{e} <<
+\coqdocvar{e'}) if the ASTs of each expression are congruent (i.e. both are
+variables, abstractions, or some other possible expression) and all
+sub-expressions of \coqdocvar{e} are holier than the corresponding ones of
+\coqdocvar{e'}. The requirement for expressions to have congruent ASTs is
+removed for holes – a hole is by definition holier than any other
+expression. Note that the << relation is reflexive as well.
+
+
+Also given is the proposition \coqdocvar{noholes} (not shown here). As would be
+expected, an expression \coqdocvar{e} satisfies \coqdocvar{noholes} if it is not a hole
+and none of its sub-expressions are holes. 
+
+ 
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_refl)}
+    \UnaryInfC{e \texttt{<<} e}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_hole)}
+    \UnaryInfC{hole \texttt{<<} e}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \AxiomC{arg \texttt{<<} arg'}
+    \RightLabel{(H\_app)}
+    \BinaryInfC{app body arg \texttt{<<} app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_abs)}
+    \UnaryInfC{abs x T body \texttt{<<} abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{<<} cond'}
+    \AxiomC{b1 \texttt{<<} b1'}
+    \AxiomC{b2 \texttt{<<} b2'}
+    \RightLabel{(H\_test)}
+    \TrinaryInfC{test cond b1 b2 \texttt{<<} test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_marked)}
+    \UnaryInfC{marked class body \texttt{<<} marked class body'}
+\end{prooftree}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{holyval\_meansval}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{holyval\_meansval} : \coqdockw{\ensuremath{\forall}} \coqdocvar{v1} \coqdocvar{v2},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{value} \coqdocvar{v1} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{v1} << \coqdocvar{v2} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{value} \coqdocvar{v2}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+Since the << relation requires the congruence of both
+arguments' ASTs, any proposition of the form \coqdocvar{v} << \coqdocvar{v'} where \coqdocvar{v} is
+a value entails that \coqdocvar{v'} is also a value. The proof proceeds by
+induction on the \coqdocvar{value} proposition. Most cases follow directly from
+constructors for the \coqdocvar{holier} relation. The inductive hypothesis is
+used for expressions of the form \coqdocvar{marked} \coqdocvar{class} \coqdocvar{body} to show that the
+bodies of both marks must be the same. 
+
+\subsection{holier\_abs\_inv}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{holier\_abs\_inv} : \coqdockw{\ensuremath{\forall}} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body} \coqdocvar{e'},\coqdoceol
+\coqdocindent{2.00em}
+(\coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body}) << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdoctac{\ensuremath{\exists}} \coqdocvar{body'}, \coqdocvar{body} << \coqdocvar{body'} \ensuremath{\land} \coqdocvar{e'} = (\coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body'}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+For any abstraction \coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body} holier than an another
+expression \coqdocvar{e'}, there must exist some \coqdocvar{body'} such that \coqdocvar{body} <<
+\coqdocvar{body'} and \coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body} << \coqdocvar{abs} \coqdocvar{x'} \coqdocvar{T'} \coqdocvar{body'}. This lemma and its
+proof may seem rather trivial. Most of the merit behind it comes from
+the simplification it provides later on in the proof of
+monotonicity.
+
+
+As a side note, this proof is a rather good example of the degree to
+which tactics can automate the more tedious aspects of proofs. For
+a more complex language with a wide variety of expressions, doing
+induction on an expression would be exceedingly tedious to check
+manually since the number of cases corresponds to the number of forms
+for expressions. In the machine proof, \texttt{"; eauto"} is used and
+amounts to saying ''most of the cases follow directly from the
+assumption``, thus removing the need to explicitly iterate through
+them. 
+
+\subsection{subst\_noholes}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{subst\_noholes} : \coqdockw{\ensuremath{\forall}} \coqdocvar{x} \coqdocvar{body} \coqdocvar{arg} \coqdocvar{result},\coqdoceol
+\coqdocindent{2.00em}
+[ \coqdocvar{arg} // \coqdocvar{x} ] \coqdocvar{body} \coqdockw{is} \coqdocvar{result} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{result} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{body}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+If the result of a substitution has no holes, then the expression
+into which the substitution was done (\coqdocvar{body}) must not have had any
+holes to begin with. Note that it's not necessarily true that the
+term substituted in (\coqdocvar{arg}) has no holes, since the substitution
+relation as defined does not require the substitution variable (\coqdocvar{x})
+to exists in \coqdocvar{body} - in other words, a hole could be ''subbed in`` but
+never used.
+
+
+The proof proceeds by induction on the substitution relation. The
+majority of cases proceed by using the \coqdocvar{noholes} assumption to derive
+that sub-expressions in the result must also not have holes and
+therefore the inductive hypothesis applies. More detail is given in
+the proof for \coqdocvar{noholes\_app\_arg\_orunused} to avoid redundancy since
+they proofs are quite similar. 
+
+\subsection{noholes\_app\_arg\_orunused}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{noholes\_app\_arg\_orunused} : \coqdockw{\ensuremath{\forall}} \coqdocvar{x} \coqdocvar{body} \coqdocvar{arg} \coqdocvar{f},\coqdoceol
+\coqdocindent{1.00em}
+\coqdocvar{noholes} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{1.00em}
+[\coqdocvar{arg} // \coqdocvar{x}] \coqdocvar{body} \coqdockw{is} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{1.00em}
+\coqdocvar{noholes} \coqdocvar{arg} \ensuremath{\lor} \coqdockw{\ensuremath{\forall}} \coqdocvar{xsub}, [\coqdocvar{xsub} // \coqdocvar{x}] \coqdocvar{body} \coqdockw{is} \coqdocvar{f}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+As mentioned in the above clarification for \coqdocvar{subst\_noholes},
+similar judgments can be made about the substituted value in
+a substitution if the result has no holes. The only difference is the
+additional possibility of this value being unused in the body of the
+substitution, which makes this lemma slightly weaker as
+a consequence. The proof proceeds similarly by induction over the
+substitution. 
+
+ Consider the case where a substitution is made into an expression
+like \coqdocvar{app} \coqdocvar{body} \coqdocvar{arg} to yield one like \coqdocvar{app} \coqdocvar{body'} \coqdocvar{arg'}. Since the
+latter has no holes, neither do \coqdocvar{body'} or \coqdocvar{arg'}. This allows for
+the inductive hypotheses to give that either \coqdocvar{arg} has no holes or
+\coqdocvar{body} = \coqdocvar{body'}. If \coqdocvar{arg} has no holes, we're done.
+
+
+Now use the induction hypothesis to get from \coqdocvar{noholes} \coqdocvar{arg'} that
+either (redundantly) \coqdocvar{noholes} \coqdocvar{arg} or \coqdocvar{arg} = \coqdocvar{arg'}. The first case is
+the same. We're still in the case where \coqdocvar{body} = \coqdocvar{body'}, though, so
+showing that \coqdocvar{app} \coqdocvar{body} \coqdocvar{arg} = \coqdocvar{app} \coqdocvar{body'} \coqdocvar{arg'} is already done.
+
+
+The rest of the cases are similar. 
+
+\subsection{noholes\_holier\_means\_eq}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{noholes\_holier\_means\_eq} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{e'},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{e} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} = \coqdocvar{e'}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+The way relativity is defined for the holier relation means that
+any expression without holes \coqdocvar{e} that's holier than another
+expression \coqdocvar{e'} must be equivalent to \coqdocvar{e'}. The proof proceeds by
+induction on the assertion that \coqdocvar{e} has no holes. The congruence of
+the << relation then gives the equivalence of \coqdocvar{e} to \coqdocvar{e'} for
+expressions that are values. The inductive hypothesis serves to show
+equivalence for expressions with sub-expressions. 
+
+ As an example, the \coqdocvar{e} = \coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2} case is given. From the
+assumption that \coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2} << \coqdocvar{e'}, we know \coqdocvar{e'} is of the form
+\coqdocvar{test} \coqdocvar{cond'} \coqdocvar{b1'} \coqdocvar{b2'}, \coqdocvar{cond} << \coqdocvar{cond'}, \coqdocvar{b1} << \coqdocvar{b1'}, and \coqdocvar{b2} <<
+\coqdocvar{b2'}. By the inductive hypotheses, all of these sub-expressions must
+therefore be equivalent. Consequently, the \coqdocvar{test} expressions are
+equivalent. The rest of the cases proceed similarly. 
+
+\subsection{bodystepsappsteps}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{bodystepsappsteps} : \coqdockw{\ensuremath{\forall}} \coqdocvar{body} \coqdocvar{arg} \coqdocvar{body'},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{body} -->* \coqdocvar{body'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+(\coqdocvar{app} \coqdocvar{body} \coqdocvar{arg}) -->* (\coqdocvar{app} \coqdocvar{body'} \coqdocvar{arg}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+According to the smallstep rules for this language, several
+expressions with sub-expressions step their sub-expressions until they
+become values. While the expression as a whole has not completely
+changed shape, it has nevertheless made a step. The following few
+lemmas cover the cases for applications, conditionals (\coqdocvar{test}s), and
+marked expressions. In a richer language, evaluation contexts could
+be used to avoid an explosion of similar lemmas for each possible
+expression with sub-expressions. 
+
+ Bodies of applications (essentially function bodies) are reduced
+as much as possible before the substitution of the argument is
+made. Hence, if the body can take a step, the entire term can take
+a step. The proof is straightforward induction on the stepping
+relation between the body of the application and the expression is
+steps to. Conditionals in \coqdocvar{test} expressions and bodies of \coqdocvar{marked} ones follow a nearly identical pattern. 
+
+\subsection{condstepsteststeps}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{condstepsteststeps} : \coqdockw{\ensuremath{\forall}} \coqdocvar{cond} \coqdocvar{cond'} \coqdocvar{b1} \coqdocvar{b2},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{cond} -->* \coqdocvar{cond'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+(\coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2}) -->* (\coqdocvar{test} \coqdocvar{cond'} \coqdocvar{b1} \coqdocvar{b2}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{markedbodstepstermsteps}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{markedbodstepstermsteps} : \coqdockw{\ensuremath{\forall}} \coqdocvar{class} \coqdocvar{body} \coqdocvar{body'},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{body} -->* \coqdocvar{body'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+(\coqdocvar{marked} \coqdocvar{class} \coqdocvar{body}) -->* (\coqdocvar{marked} \coqdocvar{class} \coqdocvar{body'}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\section{Monotonicity}
+
+
+
+ The above set of lemmas are sufficient to prove
+monotonicity, which is the property that any time an expression \coqdocvar{e}
+that's holier than an expression \coqdocvar{e'} steps to an expression \coqdocvar{f}
+containing no holes, \coqdocvar{e'} must also eventually step to \coqdocvar{f}. 
+
+\subsection{Single-step Version}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{monotonicity\_single\_step} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{e'} \coqdocvar{f},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} --> \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e'} -->* \coqdocvar{f}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+The proof begins with induction on the holier relation \coqdocvar{e} <<
+\coqdocvar{e'}. Some of the cases are rather straightforward. 
+
+
+
+
+\begin{itemize}
+\item  The reflexive case of \coqdocvar{e} << \coqdocvar{e'} is immediate; the expressions are
+  equivalent and obviously step to the same thing.
+
+
+
+\item  In the event that \coqdocvar{e} << \coqdocvar{e'} because \coqdocvar{e} is a hole, an implicit
+  contradiction is assumed in the premises since holes don't step to
+  any expression under the \coqdocvar{step} relation. The conclusion is
+  therefore vacuously true.
+
+
+
+\item  Abstractions are similar; since they're values, there's also
+  nothing for them to step to.
+
+
+
+\item  Marked expressions are only slightly more complex. Given the
+  stepping relation and the assumption that \coqdocvar{marked} \coqdocvar{class} \coqdocvar{body} -->
+  \coqdocvar{f}, a few facts can be derived. First, it must be the case that
+  \coqdocvar{body} steps to some other expression \coqdocvar{body'}. \coqdocvar{f} must also be
+  a marked expression, so it is of the form \coqdocvar{marked} \coqdocvar{classf}
+  \coqdocvar{bodyf}. Since the stepping relation gives no way for a security
+  class to be altered from the stepping of a sub-expression, we can
+  further derive that \coqdocvar{class} = \coqdocvar{classf}.
+
+
+  Showing that \coqdocvar{e'} -->* \coqdocvar{f} can now be rewritten as showing \coqdocvar{marked}
+  \coqdocvar{class} \coqdocvar{body'} -->* \coqdocvar{marked} \coqdocvar{class} \coqdocvar{bodyf'}. Since \coqdocvar{bodyf} can't have
+  holes, there's enough information to apply the inductive hypothesis
+  and get that \coqdocvar{body'} -->* \coqdocvar{bodyf}. The simple lemma
+  \coqdocvar{markedbodstepstermsteps} then completes this section of the
+  proof. 
+\end{itemize}
+
+
+ The proofs for cases where \coqdocvar{e} and \coqdocvar{e'} are \coqdocvar{test} or \coqdocvar{app}
+expressions are more involved, since the multiple step rules for
+these kinds of expressions give more possibilities as to how \coqdocvar{e} -->
+\coqdocvar{f}. While the proof may be rather long, most of the cases proceed
+fairly similarly to proof of the marked expression component. The
+more interesting case of applications stepping to the substitution
+result will be given in more detail, while the rest of the proofs are
+omitted for brevity. The application case proceeds by considering the
+possible ways that \coqdocvar{e}, of the form \coqdocvar{app} \coqdocvar{bodye} \coqdocvar{arge}, can step to
+\coqdocvar{f}.
+
+
+
+\begin{itemize}
+\item  Let us first examine the case where the body of the application
+    \coqdocvar{e} = \coqdocvar{app} \coqdocvar{bodye} \coqdocvar{arge} takes a step. Under this scenario, \coqdocvar{f} must
+    be of the form \coqdocvar{app} \coqdocvar{bodyf} \coqdocvar{argf} and, since only the body of \coqdocvar{e}
+    took a step and not the argument, \coqdocvar{argf} = \coqdocvar{arge}. Since \coqdocvar{e} = \coqdocvar{app}
+    \coqdocvar{bodye} \coqdocvar{arge} << \coqdocvar{app} \coqdocvar{bodye'} \coqdocvar{arge'} = \coqdocvar{e'}, it's necessary from the
+    definition of \coqdocvar{holier} that \coqdocvar{bodye} << \coqdocvar{bodye'} and \coqdocvar{arge} <<
+    \coqdocvar{arge'}. \coqdocvar{noholes} \coqdocvar{f} implies \coqdocvar{noholes} \coqdocvar{argf} and therefore \coqdocvar{noholes}
+    \coqdocvar{arge} by equivalence. \coqdocvar{noholes\_holier\_means\_eq} then yields \coqdocvar{arge}
+    = \coqdocvar{arge'}.
+
+
+    At this stage we are left to show that \coqdocvar{app} \coqdocvar{bodye'} \coqdocvar{arge'} -->* \coqdocvar{app}
+    \coqdocvar{bodyf} \coqdocvar{arge'}. We use \coqdocvar{bodystepsappsteps} to reduce this to
+    showing that \coqdocvar{bodye'} -->* \coqdocvar{bodyf}, which is given by the first
+    inductive hypothesis (\coqdockw{\ensuremath{\forall}} \coqdocvar{x}, \coqdocvar{noholes} \coqdocvar{x} \ensuremath{\rightarrow} \coqdocvar{bodye} --> \coqdocvar{x} \ensuremath{\rightarrow}
+    \coqdocvar{bodye'} --> \coqdocvar{x}).
+
+
+
+\item  Now assume the step from \coqdocvar{e} to \coqdocvar{f} was done by lifting the
+    security class marking the application body up to the top
+    level. Then \coqdocvar{f} is of the form \coqdocvar{marked} \coqdocvar{class} (\coqdocvar{app} \coqdocvar{bodyf} \coqdocvar{argf}),
+    \coqdocvar{bodyf} = \coqdocvar{bodye}, and \coqdocvar{argf} = \coqdocvar{arge}. Similar to the proof section
+    immediately above, it can be derived from \coqdocvar{noholes} \coqdocvar{f}, these
+    equivalences, and the \coqdocvar{e} << \coqdocvar{e'} assumption that \coqdocvar{argf} = \coqdocvar{arge'}
+    and \coqdocvar{bodyf} = \coqdocvar{bodye'}. \coqdocvar{app} (\coqdocvar{marked} \coqdocvar{class} \coqdocvar{bodye'}) \coqdocvar{arge'} -->*
+    \coqdocvar{marked} \coqdocvar{class} (\coqdocvar{app} \coqdocvar{bodye'} \coqdocvar{arge'}) then becomes an instance of the
+    \coqdocvar{step} lifting rule for applications.
+
+
+
+\item  The final case to be considered for the event that \coqdocvar{e} is an
+    application is if \coqdocvar{f} is the result of \coqdocvar{e} stepping by
+    substitution of its argument.  Since the \coqdocvar{step} relation
+    implements call-by-name semantics, it's possible that neither the
+    body of the application nor its argument are fully reduced - they
+    can be any expression at all, and therefore so can the result of
+    the substitution, \coqdocvar{f}. By \coqdocvar{holier\_abs\_inv} and the \coqdocvar{e} << \coqdocvar{e'}
+    assumption, we know that \coqdocvar{bodye} << \coqdocvar{bodye'} and \coqdocvar{e'} is an
+    abstraction of the form \coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{bodye'}.
+
+
+    Since the result of the substitution, \coqdocvar{f}, has no holes, either
+    \coqdocvar{arge} has no holes, or \coqdocvar{bodye} doesn't use the variable to
+    substitute in for. This argument is captured in the
+    \coqdocvar{noholes\_app\_arg\_orunused} lemma from earlier. 
+
+
+
+\begin{itemize}
+\item  First, the case of \coqdocvar{noholes} \coqdocvar{arge}. \coqdocvar{noholes\_holier\_means\_eq}
+      immediately gives \coqdocvar{arge} = \coqdocvar{arge'}. We can also derive \coqdocvar{noholes}
+      \coqdocvar{bodye} by \coqdocvar{subst\_noholes}. Another use of
+      \coqdocvar{noholes\_holier\_means\_eq} and the assumption that \coqdocvar{bodye} <<
+      \coqdocvar{bodye'} finishes this case.
+
+
+
+\item  Now the case where the argument to the substitution is
+      unused. We proceed similarly with applications of
+      \coqdocvar{subst\_noholes} and \coqdocvar{noholes\_holier\_means\_eq} to get that
+      \coqdocvar{bodye} must not have holes and is equal to \coqdocvar{bodye'}. Under the
+      current set of assumptions, \coqdocvar{e'} can only step to \coqdocvar{f} via the
+      substitution rule. Since any substitution into \coqdocvar{bodye'} is
+      going unused, \coqdocvar{arge'} is irrelevant and \coqdocvar{bodye} = \coqdocvar{bodye'}
+      = \coqdocvar{f}. This case reduces to showing that the step from \coqdocvar{e'} to
+      \coqdocvar{f} amounts to a discarding of the application's argument and
+      retaining of the body. 
+
+\end{itemize}
+
+\end{itemize}
+
+
+\subsection{Full Version}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{monotonicity} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{e'} \coqdocvar{f},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} -->* \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e'} -->* \coqdocvar{f}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+It should be mentioned at this point that a mistake was
+discovered in the approach to proving this theorem late along the
+process. An unfortunate problem arises when trying to use the
+\coqdocvar{monotonicity\_single\_step} proven above to prove the full
+\coqdocvar{monotonicity} lemma below: as it turns out, the assertion is simply
+too weak. When induction is done on the multi-step relation from \coqdocvar{e}
+to \coqdocvar{f}, it becomes necessary to prove that there exists a middle
+expression \coqdocvar{m} such that \coqdocvar{e} --> \coqdocvar{m} and \coqdocvar{m} -->* \coqdocvar{f}. However, there is
+no guarantee that this middle expression satisfies the \coqdocvar{noholes}
+proposition and therefore the \coqdocvar{monotonicity\_single\_step} lemma no
+longer applies. 
+
+ One approach that was considered for remedying this problem is
+to reverse the induction principle. Concretely speaking, we could
+take the same approach as outlined above with the middle expression
+\coqdocvar{m}, but instead formulate logically equivalent goals of the form \coqdocvar{e}
+-->* \coqdocvar{m} and \coqdocvar{m} --> \coqdocvar{f}. This would solve the problem of ensuring that
+\coqdocvar{m} steps to something satisfying \coqdocvar{noholes}, but ends up losing other
+information necessary to complete the proof, namely that the
+expression \coqdocvar{m} that \coqdocvar{e} steps to is still holier than the expression
+\coqdocvar{m'} that \coqdocvar{e'} steps to, since \coqdocvar{monotonicity\_single\_step} requires in
+its premises that \coqdocvar{e} << \coqdocvar{f}. The correct way to fix these issues
+involves restating \coqdocvar{monotonicity\_single\_step} to remove the
+requirement that both \coqdocvar{e} and \coqdocvar{e'} step to the same
+expression. Additionally, it shouldn't yet be required that \coqdocvar{f} not
+have holes. Such a lemma looks like this: \begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{monotonicity\_single\_step'} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{e'} \coqdocvar{f},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} --> \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdoctac{\ensuremath{\exists}} \coqdocvar{f'}, \coqdocvar{e'} -->* \coqdocvar{f'} \ensuremath{\land} \coqdocvar{f} << \coqdocvar{f'}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+The conclusion is now slightly weaker, but contains the still
+useful addition that \coqdocvar{f} << \coqdocvar{f'} and compensates by relaxing the
+antecedents. A second intermediary lemma is then used to simplify the
+proof of the final \coqdocvar{monotonicity} theorem where an \coqdocvar{f'} term is
+introduced corresponding to its role in the above lemma. \begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{monotonicity'} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{e'} \coqdocvar{f},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} << \coqdocvar{e'} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} -->* \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdoctac{\ensuremath{\exists}} \coqdocvar{f'}, \coqdocvar{e'} -->* \coqdocvar{f'} \ensuremath{\land} \coqdocvar{f} << \coqdocvar{f'}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\coqdocvar{monotonicity} now follows from the above two lemmas with the
+requirement of \coqdocvar{f} not having holes reinstated. Since \coqdocvar{monotonicity'}
+gives as a result that \coqdocvar{f} << \coqdocvar{f'}, the only way this could be possible
+is if \coqdocvar{f} = \coqdocvar{f'} by \coqdocvar{noholes\_holier\_means\_eq}, which is equivalent to
+the original statement of \coqdocvar{monotonicity}. 
+
+ Unfortunately, the problems related to the weakness of
+\coqdocvar{monotonicity\_single\_step} as originally stated were encountered too
+late in the semester to allow for time to reconstruct the corrected
+proofs in Coq, so this section is missing a corresponding machine-checked proof, which is disappointing. 
+
+\section{Lemmas and Definitions for Stability}
+
+
+
+ The second (and last) component leading to non-interference is
+what's referred to as stability. First, some terminology is
+introduced and several stepping-stone lemmas are proven. 
+
+\subsection{Pruning}
+
+
+
+ The notation \symbol{92}\symbol{92} \coqdocvar{e} //\coqdocvar{\_} \coqdocvar{labs} is used to symbolize the result of
+''pruning`` a list of labels (security classes) from an expression
+\coqdocvar{e}. To prune an expression of a labeled security class \coqdocvar{lab} is to
+replace all marked expressions \coqdocvar{marked} \coqdocvar{class} \coqdocvar{body} where \coqdocvar{class}
+= \coqdocvar{lab} with holes. The replacement descends into sub-expressions
+recursively. For ease of reading, the label list is omitted when for
+all cases except the \coqdocvar{P\_marked} ones where it becomes relevant. 
+
+ 
+\newcommand\prune[1]{
+    \textbackslash\textbackslash #1//
+}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \AxiomC{\prune{arg} = arg'}
+    \RightLabel{(P\_app)}
+    \BinaryInfC{\prune{app body arg} = app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \RightLabel{(P\_abs)}
+    \UnaryInfC{\prune{abs x T body} = abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{cond} = cond'}
+    \AxiomC{\prune{b1} = b1'}
+    \AxiomC{\prune{b2} = b2'}
+    \RightLabel{(P\_test)}
+    \TrinaryInfC{\prune{test cond b1 b2} = test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class = lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_eq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = hole}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class $\neq$ lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_neq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = marked class body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{value v}
+    \RightLabel{(P\_val)}
+    \UnaryInfC{\prune{v} = v}
+\end{prooftree}
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{subprunenoorder}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{subprunenoorder} : \coqdockw{\ensuremath{\forall}} \coqdocvar{v} \coqdocvar{x} \coqdocvar{body} \coqdocvar{result} \coqdocvar{lab},\coqdoceol
+\coqdocindent{2.00em}
+[\coqdocvar{v} // \coqdocvar{x}] \coqdocvar{body} \coqdockw{is} \coqdocvar{result} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\symbol{92}\symbol{92}\coqdocvar{result}//\coqdocvar{\_}(\coqdocvar{lab}::\coqdocvar{nil}) = \coqdocvar{result} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+[\symbol{92}\symbol{92}\coqdocvar{v}//\coqdocvar{\_}(\coqdocvar{lab}::\coqdocvar{nil}) // \coqdocvar{x}] \symbol{92}\symbol{92}\coqdocvar{body}//\coqdocvar{\_}(\coqdocvar{lab}::\coqdocvar{nil}) \coqdockw{is} \coqdocvar{result}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+If the result of a substitution has none of a label, then pruning
+the body for that label beforehand doesn't affect the result. 
+
+\subsection{prunesubst\_commute}
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{0.50em}
+\coqdockw{Lemma} \coqdocvar{prunesubst\_commute} : \coqdockw{\ensuremath{\forall}} \coqdocvar{lab} \coqdocvar{v} \coqdocvar{x} \coqdocvar{body} \coqdocvar{result},\coqdoceol
+\coqdocindent{2.00em}
+[\coqdocvar{v} // \coqdocvar{x}] \coqdocvar{body} \coqdockw{is} \coqdocvar{result} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+[(\coqdocvar{prune\_single} \coqdocvar{lab} \coqdocvar{v}) // \coqdocvar{x}] (\coqdocvar{prune\_single} \coqdocvar{lab} \coqdocvar{body}) \coqdockw{is} (\coqdocvar{prune\_single} \coqdocvar{lab} \coqdocvar{result}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+Pruning the result of a substitution is the same as pruning the
+argument and body before making the substitution. 
+
+\section{Stability}
+
+
+
+\subsection{Single-step Version}
+
+
+
+ Fortunately, while monotonicity was not able to be fully
+machine-verified to due to time constraints, stability was, despite
+a similar issue in originally stating the sub-lemmas
+inadequately. Originally, the same flawed approach was taken by
+stating the single-step lemma as so: \begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{stabilitysinglestep\_tooweak} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{f} \coqdocvar{lab},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} --> \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+(\symbol{92}\symbol{92} \coqdocvar{f} //\coqdocvar{\_} (\coqdocvar{lab}::\coqdocvar{nil})) = \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\symbol{92}\symbol{92} \coqdocvar{e} //\coqdocvar{\_} (\coqdocvar{lab}::\coqdocvar{nil}) -->* \coqdocvar{f}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+The following single-step version is slightly different than
+this, for reasons similar to the problems encountered with
+    monotonicity. This single-step lemma shows that whenever an
+    expression \coqdocvar{e} steps to another expression \coqdocvar{f} in a single step,
+    either the prune of \coqdocvar{e} steps to the prune of \coqdocvar{f} or the prune of
+    \coqdocvar{f} is holier than the prune of the term it came from, \coqdocvar{e}. For
+    the purposes of clarity, the proofs for stability and its related
+    lemmas are restricted to the pruning of a single label rather
+    than a list; the full proof would be significantly longer and add
+    little value. \begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{stabilitysinglestep} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{f} \coqdocvar{lab},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} --> \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\symbol{92}\symbol{92} \coqdocvar{e} //\coqdocvar{\_} (\coqdocvar{lab} :: \coqdocvar{nil}) -->* (\symbol{92}\symbol{92} \coqdocvar{f} //\coqdocvar{\_} (\coqdocvar{lab} :: \coqdocvar{nil}))\coqdoceol
+\coqdocindent{2.00em}
+\ensuremath{\lor}\coqdoceol
+\coqdocindent{2.00em}
+\symbol{92}\symbol{92} \coqdocvar{f} //\coqdocvar{\_} (\coqdocvar{lab} :: \coqdocvar{nil}) << \symbol{92}\symbol{92} \coqdocvar{e} //\coqdocvar{\_} (\coqdocvar{lab} :: \coqdocvar{nil}).\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+The proof is by induction on the step from \coqdocvar{e} to \coqdocvar{f}. Many of
+the cases are fairly similar. A few have been picked out to
+demonstrate the process. Since the value of the security class
+identified by the label is irrelevant here and the same in all cases,
+the ''\coqdocvar{\_}[\coqdocvar{lab}]`` for prune notation is omitted. 
+
+
+
+
+\begin{itemize}
+\item  Consider the case where \coqdocvar{e} --> \coqdocvar{f} because \coqdocvar{e} is of the form \coqdocvar{app}
+  (\coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \coqdocvar{body}) \coqdocvar{arg} and \coqdocvar{f} is the result of substituting \coqdocvar{arg}
+  into the abstraction. Since the structure of the result is
+  necessarily different than that of an application and the holier
+  relation requires congruent expressions, the possibility of \symbol{92}\symbol{92}
+  \coqdocvar{f} // << \symbol{92}\symbol{92} \coqdocvar{e} // can be eliminated.
+
+
+  Partially applying the \coqdocvar{prune} rules to these expressions means we
+  must show that \coqdocvar{app} (\coqdocvar{abs} \coqdocvar{x} \coqdocvar{T} \symbol{92}\symbol{92}\coqdocvar{body}//) \symbol{92}\symbol{92}\coqdocvar{arg}// -->* \symbol{92}\symbol{92}\coqdocvar{subres}//
+  where [\coqdocvar{arg} // \coqdocvar{x}] \coqdocvar{body} \coqdockw{is} \coqdocvar{subres}. This amounts to showing that
+  [\symbol{92}\symbol{92}\coqdocvar{arg}// // \coqdocvar{x}] \symbol{92}\symbol{92}\coqdocvar{body}// \coqdockw{is} \symbol{92}\symbol{92}\coqdocvar{subres}// as defined in the \coqdocvar{step}
+  relation. The \coqdocvar{prunesubst\_commute} lemma given above takes care of
+  the rest.
+
+
+
+\item  The case where \coqdocvar{e} --> \coqdocvar{f} by reducing a marked body (\coqdocvar{marked} \coqdocvar{class}
+  \coqdocvar{body} --> \coqdocvar{marked} \coqdocvar{class} \coqdocvar{body'}) is more interesting. Nothing can be
+  said yet as to which disjunct will apply, because it depends on
+  whether the marked expression is of the security class to be
+  pruned. Consider first that it is. Then \symbol{92}\symbol{92}\coqdocvar{marked} \coqdocvar{class} \coqdocvar{bodye}//
+  -->* \symbol{92}\symbol{92}\coqdocvar{marked} \coqdocvar{class} \coqdocvar{bodyf}// is trivial; we're showing that \coqdocvar{hole}
+  -->* \coqdocvar{hole} (or that \coqdocvar{hole} << \coqdocvar{hole}, which is also true). So now
+     assume it's not. The inductive hypothesis gives us the
+     relationship between \coqdocvar{bodye} and \coqdocvar{bodyf}, so the two cases are
+     examined separately.
+
+
+
+\begin{itemize}
+\item  First consider that \symbol{92}\symbol{92}\coqdocvar{bodye}// -->* \symbol{92}\symbol{92}\coqdocvar{bodyf}//. In this case,
+    \coqdocvar{markedbodystepstermsteps} makes it easy to show the left
+    disjunct in the conclusion is true: \coqdocvar{marked} \coqdocvar{class} \symbol{92}\symbol{92}\coqdocvar{bodye}// -->*
+    \coqdocvar{marked} \coqdocvar{class} \symbol{92}\symbol{92}\coqdocvar{bodyf}//.
+
+
+
+\item  Now assume \symbol{92}\symbol{92}\coqdocvar{bodyf}// << \symbol{92}\symbol{92}\coqdocvar{bodye}//. The << relation between
+    marked terms requires exactly this, so the right disjunct is
+    true: \coqdocvar{marked} \coqdocvar{class} \symbol{92}\symbol{92}\coqdocvar{bodyf}// << \coqdocvar{marked} \coqdocvar{class} \symbol{92}\symbol{92}\coqdocvar{bodye}//.
+
+\end{itemize}
+
+\end{itemize}
+
+
+The rest of the cases follow in a similar fashion by case-splitting
+on the inductive hypothesis and whether \coqdocvar{class} = \coqdocvar{lab} if needed.
+
+
+
+
+\subsection{Full Version}
+
+
+
+ Stability is the property where, when any expression \coqdocvar{e} that
+steps to an expression \coqdocvar{f} without holes or labels to be pruned, the
+prune of \coqdocvar{e} will also step to \coqdocvar{f}. \begin{coqdoccode}
+\coqdocemptyline
+\coqdocindent{1.00em}
+\coqdockw{Lemma} \coqdocvar{stability} : \coqdockw{\ensuremath{\forall}} \coqdocvar{e} \coqdocvar{f} \coqdocvar{lab},\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{noholes} \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\coqdocvar{e} -->* \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+(\symbol{92}\symbol{92} \coqdocvar{f} //\coqdocvar{\_}(\coqdocvar{lab} :: \coqdocvar{nil})) = \coqdocvar{f} \ensuremath{\rightarrow}\coqdoceol
+\coqdocindent{2.00em}
+\symbol{92}\symbol{92} \coqdocvar{e} //\coqdocvar{\_}(\coqdocvar{lab} :: \coqdocvar{nil}) -->* \coqdocvar{f}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+Proof for the stability theorem is done here by induction on the
+    \coqdocvar{e} -->* \coqdocvar{f} assumption. Most of the legwork is already
+    accomplished by \coqdocvar{monotonicity}. Note that \coqdocvar{e} -->* \coqdocvar{f} is
+    a multistep relation, not a single step, and so the base case is
+    that zero steps are taken. If zero steps are taken from \coqdocvar{e} to
+    \coqdocvar{f}, then \coqdocvar{e} = \coqdocvar{f} and the conclusion is trivial. If at least one
+    step is taken, \coqdocvar{e} --> \coqdocvar{m} for some term \coqdocvar{m} and we can assume         \coqdocvar{m} -->* \coqdocvar{f}. We must show that \symbol{92}\symbol{92}\coqdocvar{e}// -->* \coqdocvar{f}.  Since we have that    \coqdocvar{e} --> \coqdocvar{m}, \coqdocvar{stabilitysinglestep} gives us that either                \symbol{92}\symbol{92}\coqdocvar{e}// -->* \symbol{92}\symbol{92}\coqdocvar{m}// or \symbol{92}\symbol{92}\coqdocvar{m}// << \symbol{92}\symbol{92}\coqdocvar{e}//.
+
+
+
+\begin{itemize}
+\item  If \symbol{92}\symbol{92}\coqdocvar{e}// -->* \symbol{92}\symbol{92}\coqdocvar{m}//, then the transitivity of -->* and the
+      inductive hypothesis give that \symbol{92}\symbol{92}\coqdocvar{e}// -->* \symbol{92}\symbol{92}\coqdocvar{m}// -->* \symbol{92}\symbol{92}\coqdocvar{f}//
+      = \coqdocvar{f}.
+
+
+
+\item  Now presume \symbol{92}\symbol{92}\coqdocvar{m}// << \symbol{92}\symbol{92}\coqdocvar{e}//. It's already given that \coqdocvar{f} has
+      no holes and \coqdocvar{m} -->* \coqdocvar{f}. All that's needed to apply the
+      \coqdocvar{monotonicity} theorem and complete the proof is to show that
+      \symbol{92}\symbol{92}\coqdocvar{m}// -->* \coqdocvar{f}, but this is exactly what the inductive
+      hypothesis provides and so we are done.
+
+\end{itemize}
+
+
+
+
+\section{Non-interference}
+
+
+
+ Together, stability and monotonicity (along with the guarantees
+of the type system) form the majority of the proof for
+non-interference. To restate the theorem, it's the property that
+TODO: unsure how to state this from the slides 
+
+\chapter{References and Related Work}
+
+
+
+
+
+
+\begin{itemize}
+\item  The idea for using stability and monotonicity to complete
+  a syntactic proof of non-interference was inspired by François
+  Pottier's 2004 presentation at INRIA. The slides of his
+  presentation can be found at
+  http://gallium.inria.fr/\~{}fpottier/slides/eugene.pdf.
+
+
+
+\item  TODO: any other things I should add?
+
+\end{itemize}
+
+
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\end{document}
