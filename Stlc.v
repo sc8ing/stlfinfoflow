@@ -175,7 +175,6 @@ data structures shown below. *)
   Hint Unfold z.
 (* end hide *)
 
-
 (** ** Semantics *)
 
 (** *** Values *)
@@ -322,7 +321,7 @@ illegal. Constraining the amount of types in the language keeps this
 specification relatively short. Following convention as closely as
 possible within the limitations of Coq's syntactical restraints, the
 notation [Gamma |- e \in T] is used to signify that expression [e] is
-        of type [T] under a typing context [Gamma]. *)
+        has type [T] under a typing context [Gamma]. *)
 
   Inductive has_dtype : context -> exp -> data_type -> Prop :=
     | T_Var : forall Gamma x T,
@@ -459,14 +458,6 @@ and none of its subexpressions are holes. *)
 
 (** *** holyval_meansval *)
 
-(** Since the [<<] relation requires the congruence of both
-arguments' ASTs, any proposition of the form [v << v'] where [v] is
-a value entails that [v'] is also a value. The proof procedes by
-induction on the [value] proposition. Most cases follow directly from
-constructors for the [holier] relation. The inductive hypothesis is
-used for expressions of the form [marked class body] to show that the
-bodies of both marks must be the same. *)
-
   Lemma holyval_meansval : forall v1 v2,
     value v1 ->
     v1 << v2 ->
@@ -478,7 +469,24 @@ bodies of both marks must be the same. *)
     - subst. apply IHvalue. assumption.
   Qed.
 
+(** Since the [<<] relation requires the congruence of both
+arguments' ASTs, any proposition of the form [v << v'] where [v] is
+a value entails that [v'] is also a value. The proof procedes by
+induction on the [value] proposition. Most cases follow directly from
+constructors for the [holier] relation. The inductive hypothesis is
+used for expressions of the form [marked class body] to show that the
+bodies of both marks must be the same. *)
+
 (** *** holier_abs_inv *)
+
+  Lemma holier_abs_inv : forall x T body e',
+    (abs x T body) << e' ->
+    exists body', body << body' /\ e' = (abs x T body').
+  Proof.
+    intros. inversion H; subst.
+    - induction body; eexists; eauto.
+    - exists body'. auto.
+  Qed.
 
 (** For any abstraction [abs x T body] holier than an another
 expression [e'], there must exist some [body'] such that [body <<
@@ -497,31 +505,7 @@ amounts to saying "most of the cases follow directly from the
 assumption", thus removing the need to explicitly iterate through
 them. *)
 
-  Lemma holier_abs_inv : forall x T body e',
-    (abs x T body) << e' ->
-    exists body', body << body' /\ e' = (abs x T body').
-  Proof.
-    intros. inversion H; subst.
-    - induction body; eexists; eauto.
-    - exists body'. auto.
-  Qed.
-
 (** *** subst_noholes *)
-
-(** If the result of a substitution has no holes, then the expression
-into which the substitution was done ([body]) must not have had any
-holes to begin with. Note that it's not necessarily true that the
-term substituted in ([arg]) has no holes, since the substitution
-relation as defined does not require the substitution variable ([x])
-to exists in [body] - in other words, a hole could be "subbed in" but
-never used.
-
-The proof proceeds by induction on the substitution relation. The
-majority of cases proceed by using the [noholes] assumption to derive
-that subexpressions in the result must also not have holes and
-therefore the inductive hypothesis applies. More detail is given in
-the proof for [noholes_app_arg_orunused] to avoid redundancy since
-they proofs are quite similar. *)
 
   Lemma subst_noholes : forall x body arg result,
     [ arg // x ] body is result ->
@@ -545,29 +529,23 @@ they proofs are quite similar. *)
     - inversion H0; subst.
       apply IHsubsti in H2. auto.
   Qed.
-  
+
+(** If the result of a substitution has no holes, then the expression
+into which the substitution was done ([body]) must not have had any
+holes to begin with. Note that it's not necessarily true that the
+term substituted in ([arg]) has no holes, since the substitution
+relation as defined does not require the substitution variable ([x])
+to exists in [body] - in other words, a hole could be "subbed in" but
+never used.
+
+The proof proceeds by induction on the substitution relation. The
+majority of cases proceed by using the [noholes] assumption to derive
+that subexpressions in the result must also not have holes and
+therefore the inductive hypothesis applies. More detail is given in
+the proof for [noholes_app_arg_orunused] to avoid redundancy since
+they proofs are quite similar. *)
+
 (** *** noholes_app_arg_orunused *)
-
-(** As mentioned in the above clarification for [subst_noholes],
-similar judgements can be made about the substituted value in
-a substitution if the result has no holes. The only difference is the
-additional possibility of this value being unused in the body of the
-substitution, which makes this lemma slightly weaker as
-a consequence. The proof proceeds similarly by induction over the
-substitution. *)
-
-(** Consider the case where a substitution is made into an expression
-like [app body arg] to yield one like [app body' arg']. Since the
-latter has no holes, neither do [body'] or [arg']. This allows for
-the inductive hypotheses to give that either [arg] has no holes or
-[body = body']. If [arg] has no holes, we're done.
-
-Now use the induction hypothesis to get from [noholes arg'] that
-either (redundantly) [noholes arg] or [arg = arg']. The first case is
-the same. We're still in the case where [body = body'], though, so
-showing that [app body arg = app body' arg'] is already done.
-
-The rest of the cases are similar. *)
 
   Lemma noholes_app_arg_orunused : forall x body arg f,
   noholes f ->
@@ -615,23 +593,29 @@ The rest of the cases are similar. *)
     - inversion H.
   Qed.
 
+(** As mentioned in the above clarification for [subst_noholes],
+similar judgements can be made about the substituted value in
+a substitution if the result has no holes. The only difference is the
+additional possibility of this value being unused in the body of the
+substitution, which makes this lemma slightly weaker as
+a consequence. The proof proceeds similarly by induction over the
+substitution. *)
+
+(** Consider the case where a substitution is made into an expression
+like [app body arg] to yield one like [app body' arg']. Since the
+latter has no holes, neither do [body'] or [arg']. This allows for
+the inductive hypotheses to give that either [arg] has no holes or
+[body = body']. If [arg] has no holes, we're done.
+
+Now use the induction hypothesis to get from [noholes arg'] that
+either (redundantly) [noholes arg] or [arg = arg']. The first case is
+the same. We're still in the case where [body = body'], though, so
+showing that [app body arg = app body' arg'] is already done.
+
+The rest of the cases are similar. *)
+
 (** *** noholes_holier_means_eq *)
 
-(** The way reflexivity is defined for the holier relation means that
-any expression without holes [e] that's holier than another
-expression [e'] must be equivalent to [e']. The proof proceeds by
-induction on the assertion that [e] has no holes. The congruence of
-the [<<] relation then gives the equivalence of [e] to [e'] for
-expressions that are values. The inductive hypothesis serves to show
-equivalence for expressions with subexpressions. *)
-
-(** As an example, the [e = test cond b1 b2] case is given. From the
-assumption that [test cond b1 b2 << e'], we know [e'] is of the form
-[test cond' b1' b2'], [cond << cond'], [b1 << b1'], and [b2 <<
-b2']. By the inductive hypotheses, all of these subexpressions must
-therefore be equivalent. Consequently, the [test] expressions are
-equivalent. The rest of the cases proceed similarly. *)
-  
   Lemma noholes_holier_means_eq : forall e e',
     noholes e ->
     e << e' ->
@@ -656,7 +640,31 @@ equivalent. The rest of the cases proceed similarly. *)
       apply IHnoholes in H4; subst; auto.
   Qed.
 
+(** The way reflexivity is defined for the holier relation means that
+any expression without holes [e] that's holier than another
+expression [e'] must be equivalent to [e']. The proof proceeds by
+induction on the assertion that [e] has no holes. The congruence of
+the [<<] relation then gives the equivalence of [e] to [e'] for
+expressions that are values. The inductive hypothesis serves to show
+equivalence for expressions with subexpressions. *)
+
+(** As an example, the [e = test cond b1 b2] case is given. From the
+assumption that [test cond b1 b2 << e'], we know [e'] is of the form
+[test cond' b1' b2'], [cond << cond'], [b1 << b1'], and [b2 <<
+b2']. By the inductive hypotheses, all of these subexpressions must
+therefore be equivalent. Consequently, the [test] expressions are
+equivalent. The rest of the cases proceed similarly. *)
+  
 (** *** bodystepsappsteps *)
+
+  Lemma bodystepsappsteps : forall body arg body',
+    body -->* body' ->
+    (app body arg) -->* (app body' arg).
+  Proof.
+    intros. induction H; subst.
+    - constructor.
+    - apply multi_step with (app y0 arg); auto.
+  Qed.
 
 (** According to the smallstep rules for this language, several
 expressions with subexpressions step their subexpressions until they
@@ -672,22 +680,9 @@ as much as possible before the subtitution of the argument is
 made. Hence, if the body can take a step, the entire term can take
 a step. The proof is straightforward induction on the stepping
 relation between the body of the application and the expression is
-steps to. *)
-
-  Lemma bodystepsappsteps : forall body arg body',
-    body -->* body' ->
-    (app body arg) -->* (app body' arg).
-  Proof.
-    intros. induction H; subst.
-    - constructor.
-    - apply multi_step with (app y0 arg); auto.
-  Qed.
+steps to. Conditionals in [test] expressions and bodies of [marked] ones follow a nearly identical pattern. *)
 
 (** *** condstepsteststeps *)
-
-(** Conditionals are stepped until their condition reduces to
-a boolean value. The proof is almost identical to
-[bodystepsappsteps]. *)
 
   Lemma condstepsteststeps : forall cond cond' b1 b2,
     cond -->* cond' ->
@@ -699,9 +694,6 @@ a boolean value. The proof is almost identical to
   Qed.
 
 (** *** markedbodstepstermsteps *)
-
-(** Sub-stepping also applies to marked expressions and their
-subexpression. This proof is also the same. *)
 
   Lemma markedbodstepstermsteps : forall class body body',
     body -->* body' ->
@@ -720,6 +712,74 @@ that's holier than an expression [e'] steps to an expression [f]
 containing no holes, [e'] must also eventually step to [f]. *)
 
 (** *** Single-step Version *)
+
+  Lemma monotonicity_single_step : forall e e' f,
+    noholes f ->
+    e << e' ->
+    e --> f ->
+    e' -->* f.
+  Proof.
+    intros. generalize dependent f. induction H0; intros.
+    - apply multi_R. assumption.
+    - inversion H1; subst.
+    - inversion H1; subst.
+      + apply holier_abs_inv in H0_.
+        destruct H0_ as [body' [bodyprop funcprop]].
+        subst. specialize H0_0 as H'.
+        eapply multi_R.
+        specialize H4 as H4'.
+        apply noholes_app_arg_orunused in H4; eauto.
+        destruct H4 as [nh | unused].
+        * apply noholes_holier_means_eq in H'.
+          subst.
+          apply subst_noholes in H4'; eauto.
+          apply noholes_holier_means_eq in bodyprop; eauto.
+          subst. eauto. assumption.
+        * apply subst_noholes in H4'; eauto.
+          apply noholes_holier_means_eq in bodyprop; eauto.
+          subst.
+          constructor; eauto.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_0; eauto.
+        subst.
+        eapply bodystepsappsteps.
+        apply IHholier1; eauto.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        inversion H; subst. inversion H2; subst.
+        apply noholes_holier_means_eq in H0_0; subst; eauto.
+        apply multi_R. eauto.
+        inversion H; subst. inversion H2; subst.
+        constructor. auto.
+    - inversion H1.
+    - inversion H1; subst.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        apply noholes_holier_means_eq in H0_0; subst; eauto.
+        apply multi_R.
+        constructor.
+        constructor.
+      + apply noholes_holier_means_eq in H0_; subst; eauto.
+        apply noholes_holier_means_eq in H0_1; subst; eauto.
+        apply multi_R.
+        constructor.
+        constructor.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+        apply IHholier1 in H5; auto.
+        apply condstepsteststeps. auto.
+      + inversion H; subst.
+        apply noholes_holier_means_eq in H0_; subst; auto.
+        apply noholes_holier_means_eq in H0_0; subst; auto.
+        apply noholes_holier_means_eq in H0_1; subst; auto.
+        apply multi_R. apply ST_LiftTestCond.
+        inversion H2; subst; auto.
+        inversion H2; subst; auto.
+        constructor. inversion H2; subst; auto.
+    - inversion H1; subst.
+      inversion H; subst.
+      apply IHholier in H3; auto.
+      apply markedbodstepstermsteps. assumption.
+  Qed.
 
 (** The proof begins with induction on the holier relation [e <<
 e']. Some of the cases are rather straightforward. *)
@@ -823,74 +883,6 @@ possible ways that [e], of the form [app bodye arge], can step to
       retaining of the body. 
 *)
 
-  Lemma monotonicity_single_step : forall e e' f,
-    noholes f ->
-    e << e' ->
-    e --> f ->
-    e' -->* f.
-  Proof.
-    intros. generalize dependent f. induction H0; intros.
-    - apply multi_R. assumption.
-    - inversion H1; subst.
-    - inversion H1; subst.
-      + apply holier_abs_inv in H0_.
-        destruct H0_ as [body' [bodyprop funcprop]].
-        subst. specialize H0_0 as H'.
-        eapply multi_R.
-        specialize H4 as H4'.
-        apply noholes_app_arg_orunused in H4; eauto.
-        destruct H4 as [nh | unused].
-        * apply noholes_holier_means_eq in H'.
-          subst.
-          apply subst_noholes in H4'; eauto.
-          apply noholes_holier_means_eq in bodyprop; eauto.
-          subst. eauto. assumption.
-        * apply subst_noholes in H4'; eauto.
-          apply noholes_holier_means_eq in bodyprop; eauto.
-          subst.
-          constructor; eauto.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_0; eauto.
-        subst.
-        eapply bodystepsappsteps.
-        apply IHholier1; eauto.
-      + apply noholes_holier_means_eq in H0_; subst; eauto.
-        inversion H; subst. inversion H2; subst.
-        apply noholes_holier_means_eq in H0_0; subst; eauto.
-        apply multi_R. eauto.
-        inversion H; subst. inversion H2; subst.
-        constructor. auto.
-    - inversion H1.
-    - inversion H1; subst.
-      + apply noholes_holier_means_eq in H0_; subst; eauto.
-        apply noholes_holier_means_eq in H0_0; subst; eauto.
-        apply multi_R.
-        constructor.
-        constructor.
-      + apply noholes_holier_means_eq in H0_; subst; eauto.
-        apply noholes_holier_means_eq in H0_1; subst; eauto.
-        apply multi_R.
-        constructor.
-        constructor.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-        apply noholes_holier_means_eq in H0_1; subst; auto.
-        apply IHholier1 in H5; auto.
-        apply condstepsteststeps. auto.
-      + inversion H; subst.
-        apply noholes_holier_means_eq in H0_; subst; auto.
-        apply noholes_holier_means_eq in H0_0; subst; auto.
-        apply noholes_holier_means_eq in H0_1; subst; auto.
-        apply multi_R. apply ST_LiftTestCond.
-        inversion H2; subst; auto.
-        inversion H2; subst; auto.
-        constructor. inversion H2; subst; auto.
-    - inversion H1; subst.
-      inversion H; subst.
-      apply IHholier in H3; auto.
-      apply markedbodstepstermsteps. assumption.
-  Qed.
-
 (** *** Full Version *)
 
   Lemma monotonicity : forall e e' f,
@@ -984,10 +976,10 @@ gives as a result that [f << f'], the only way this could be possible
 is if [f = f'] by [noholes_holier_means_eq], which is equivalent to
 the original statement of [monotonicity]. *)
   
-(**  Unfortunately, the problems related to the weakness of
+(** Unfortunately, the problems related to the weakness of
 [monotonicity_single_step] as originally stated were encountered too
 late in the semester to allow for time to reconstruct the corrected
-proofs in Coq, which is disappointing. *)
+proofs in Coq, so this section is missing a corresponding machine-checked proof, which is disappointing. *)
 
 (** ** Lemmas and Definitions for Stability *)
 
@@ -1034,9 +1026,6 @@ recursively. *)
 
 (** *** subprunenoorder *)
 
-(** If the result of a substitution has none of a label, then pruning
-the body for that label beforehand doesn't affect the result. *)
-
   Lemma subprunenoorder : forall v x body result lab,
     [v // x] body is result ->
     \\result//_(lab::nil) = result ->
@@ -1060,12 +1049,12 @@ the body for that label beforehand doesn't affect the result. *)
         inversion H0; congruence.
      Qed.
 
+(** If the result of a substitution has none of a label, then pruning
+the body for that label beforehand doesn't affect the result. *)
+
 (** *** prunesubst_commute *)
 
-(** Pruning the result of a substitution is the same as pruning the
-argument and body before making the substitution. *)
-
-  Lemma prunesubst_commute : forall lab v x body result,
+ Lemma prunesubst_commute : forall lab v x body result,
     [v // x] body is result ->
     [(prune_single lab v) // x] (prune_single lab body) is (prune_single lab result).
   Proof.
@@ -1073,6 +1062,9 @@ argument and body before making the substitution. *)
     destruct (sec_class_eq_dec class lab); auto.
   Qed.
 
+(** Pruning the result of a substitution is the same as pruning the
+argument and body before making the substitution. *)
+ 
 (** ** Stability *)
 
 (** *** Single-step Version *)
