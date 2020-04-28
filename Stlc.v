@@ -1293,21 +1293,23 @@ labels? *)
     (\\ f //_labs) = f ->
     \\ e //_labs -->* f.
   Proof.
-    intros. induction H0. (* induction on e -->* f *)
+    intros. induction H0.
     - rewrite H1. apply multi_refl.
-    - apply multi_step with y0. (*?*)
+    - apply multi_step with y0.
   Admitted.
 
-(* ** Non-interference *)
+
+(** ** Non-interference *)
 
 (** Together, stability and monotonicity (along with the guarantees
 of the type system) form the majority of the proof for
-non-interference.
-
-(** TODO: write/explain how non-interference can be derived from
-monotonicity and stabilty (what it is is already introduced above) *)
+non-interference. TODO: write/explain how non-interference can be
+derived from monotonicity and stabilty (what it is is already
+introduced above) *)
 
 (** * References and Related Work *)
+
+(** References and stuff *)
 
 (* begin hide *)
 End STLC.
