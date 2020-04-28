@@ -106,6 +106,54 @@
 
 
 %%%%%%%%%%%%%%%%%%%%% smallstep %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{prooftree}
+    \AxiomC{[arg // x] body is subres}
+    \RightLabel{(ST\_AppAbs)}
+    \UnaryInfC{app (abs x T body) arg $\texttt{-->}$ subres}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_App1)}
+    \UnaryInfC{app body arg \texttt{-->} app body' arg}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestTru)}
+    \UnaryInfC{test tru b1 b2 \texttt{-->} b1}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_TestFls)}
+    \UnaryInfC{test fls b1 b2 \texttt{-->} b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{-->} cond'}
+    \RightLabel{(ST\_Test)}
+    \UnaryInfC{test cond b1 b2 \texttt{-->} test cond' b1 b2}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftApp)}
+    \UnaryInfC{app (marked class body) arg \texttt{-->} marked class (app body arg)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(ST\_LiftTestCond)}
+    \UnaryInfC{test (marked class cond) b1 b2 \texttt{-->} marked class (test cond b1 b2)}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{-->} body'}
+    \RightLabel{(ST\_MarkReduce)}
+    \UnaryInfC{marked class body \texttt{-->} marked class body'}
+\end{prooftree}
+
 
 
 \end{document}
