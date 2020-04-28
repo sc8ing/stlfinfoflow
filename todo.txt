@@ -4,8 +4,8 @@
         x substitution semantics
         x smallstep
         x typing
-        - holier relation
-        - pruning
+        x holier relation
+        x pruning
     - ::= style for syntax
 - subprunenoorder, prunesubst_commute proofs
 - table of contents

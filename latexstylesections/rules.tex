@@ -208,7 +208,94 @@
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%% holier relation %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_refl)}
+    \UnaryInfC{e \texttt{<<} e}
+\end{prooftree}
 
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(H\_hole)}
+    \UnaryInfC{hole \texttt{<<} e}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \AxiomC{arg \texttt{<<} arg'}
+    \RightLabel{(H\_app)}
+    \BinaryInfC{app body arg \texttt{<<} app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_abs)}
+    \UnaryInfC{abs x T body \texttt{<<} abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{cond \texttt{<<} cond'}
+    \AxiomC{b1 \texttt{<<} b1'}
+    \AxiomC{b2 \texttt{<<} b2'}
+    \RightLabel{(H\_test)}
+    \TrinaryInfC{test cond b1 b2 \texttt{<<} test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{body \texttt{<<} body'}
+    \RightLabel{(H\_marked)}
+    \UnaryInfC{marked class body \texttt{<<} marked class body'}
+\end{prooftree}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%% pruning %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand\prune[1]{
+    \textbackslash\textbackslash #1//
+}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \AxiomC{\prune{arg} = arg'}
+    \RightLabel{(P\_app)}
+    \BinaryInfC{\prune{app body arg} = app body' arg'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{body} = body'}
+    \RightLabel{(P\_abs)}
+    \UnaryInfC{\prune{abs x T body} = abs x T body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{\prune{cond} = cond'}
+    \AxiomC{\prune{b1} = b1'}
+    \AxiomC{\prune{b2} = b2'}
+    \RightLabel{(P\_test)}
+    \TrinaryInfC{\prune{test cond b1 b2} = test cond' b1' b2'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class = lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_eq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = hole}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{class $\neq$ lab}
+    \AxiomC{\prune{body}\_[lab] = body'}
+    \RightLabel{(P\_marked\_neq)}
+    \BinaryInfC{\prune{marked class body}\_[lab] = marked class body'}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{value v}
+    \RightLabel{(P\_val)}
+    \UnaryInfC{\prune{v} = v}
+\end{prooftree}
 
 \end{document}
