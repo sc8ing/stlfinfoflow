@@ -2,8 +2,8 @@
     - stylized line bar layout
         x values
         x substitution semantics
-        - smallstep
-        - typing
+        x smallstep
+        x typing
         - holier relation
         - pruning
     - ::= style for syntax

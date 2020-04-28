@@ -156,4 +156,59 @@
 
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%% typing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{prooftree}
+    \AxiomC{$\Gamma(x) =$ T}
+    \RightLabel{(T\_Var)}
+    \UnaryInfC{$\Gamma\vdash$ var x : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma[\texttt{"x"}:=$T11$](e) \vdash$ t12 : T12}
+    \RightLabel{(T\_Abs)}
+    \UnaryInfC{$\Gamma\vdash$ abs x T11 t12 : Arrow T11 T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : Arrow T11 T12}
+    \AxiomC{$\Gamma\vdash$arg : T11}
+    \RightLabel{(T\_App)}
+    \BinaryInfC{$\Gamma\vdash$ app body arg : T12}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Tru)}
+    \UnaryInfC{$\Gamma\vdash$ tru : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T\_Fls)}
+    \UnaryInfC{$\Gamma\vdash$ fls : Bool}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$cond : Bool}
+    \AxiomC{$\Gamma\vdash$b1 : T}
+    \AxiomC{$\Gamma\vdash$b2 : T}
+    \RightLabel{(T\_Test)}
+    \TrinaryInfC{$\Gamma\vdash$ test cond b1 b2 : T}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash$body : T}
+    \RightLabel{(T\_Marked)}
+    \UnaryInfC{$\Gamma\vdash$ marked class body : T}
+\end{prooftree}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 \end{document}
