@@ -1,6 +1,7 @@
-- fixups from paper
+x fixups from paper
+x add slides as reference link
+
 - noninterference proof explanation
-- add slides as reference link
 - move lemma statements above writing
 - spellcheck
 - styling

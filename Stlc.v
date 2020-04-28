@@ -1269,7 +1269,17 @@ TODO: unsure how to state this from the slides *)
 
 (** * References and Related Work *)
 
-(** References and stuff *)
+(** 
+
+- The idea for using stability and monotonicity to complete
+  a synactic proof of non-interference was inspired by François
+  Pottier's 2004 presentation at INRIA. The slides of his
+  presentation can be found at
+  http://gallium.inria.fr/~fpottier/slides/eugene.pdf.
+
+- TODO: any other things I should add?
+
+*)
 
 (* begin hide *)
 End STLC.
