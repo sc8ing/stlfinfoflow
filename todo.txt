@@ -1,5 +1,3 @@
-- last sections disappearing again
-
 - monotonicity fixed in coq
 - subprunenoorder, prunesubst_commute proofs
 - fix links

@@ -11,6 +11,7 @@
 \usepackage{titlesec}
 \usepackage{lipsum}
 \usepackage{setspace}
+
 \titleformat{\chapter}[display]
   {\normalfont\bfseries}{}{0pt}{\Huge}
 
@@ -41,8 +42,6 @@
 
 
 
-% so chapters don't start on another page
-\let\clearpage\relax
 
 \setcounter{secnumdepth}{2}
 \setcounter{tocdepth}{2}
@@ -1270,26 +1269,12 @@ Proof for the stability theorem is done here by induction on the
 
 \section{Non-interference}
 
-
-
- Together, stability and monotonicity (along with the guarantees
-of the type system) form the majority of the proof for
-non-interference. To restate the theorem, it's the property that
-TODO: unsure how to state this from the slides 
+ Together, stability and monotonicity (along with the guarantees of the type system) form the majority of the proof for non-interference. To restate the theorem, it's the property that adf TODO: unsure how to state this from the slides
 
 \chapter{References and Related Work}
 
-
-
-
-
-
 \begin{itemize}
-\item  The idea for using stability and monotonicity to complete
-  a syntactic proof of non-interference was inspired by François
-  Pottier's 2004 presentation at INRIA. The slides of his
-  presentation can be found at
-  http://gallium.inria.fr/\~{}fpottier/slides/eugene.pdf.
+\item  The idea for using stability and monotonicity to complete a syntactic proof of non-interference was inspired by François Pottier's 2004 presentation at INRIA. The slides of his presentation can be found at \url{http://gallium.inria.fr/~fpottier/slides/eugene.pdf}.
 
 
 
@@ -1298,8 +1283,4 @@ TODO: unsure how to state this from the slides
 \end{itemize}
 
 
-\begin{coqdoccode}
-\coqdocemptyline
-\coqdocemptyline
-\end{coqdoccode}
 \end{document}
