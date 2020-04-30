@@ -1570,8 +1570,28 @@ prune of [e] will also step to [f]. *)
 
 (** Together, stability and monotonicity (along with the guarantees
 of the type system) form the majority of the proof for
-non-interference. To restate the theorem, it's the property that
-TODO: unsure how to state this from the slides *)
+non-interference. To restate the theorem, it's the property that, for
+any two well-typed expressions [e] and [f] where [\\e// = \\f//], [e
+-->* v] is equivalent to [f -->* v] for some value [v]. *)
+
+    Lemma non_interference' : forall Gamma e T v lab,
+        Gamma |- e \in T ->
+        e -->* v ->
+        \\e//_(lab::nil) -->* v.
+    Proof.
+    intros.
+    Admitted.
+
+    Lemma non_interference : forall e f lab v T Gamma,
+        Gamma |- e \in T ->
+        Gamma |- f \in T ->
+        value v ->
+        \\e//_(lab::nil) = \\f//_(lab::nil) ->
+        (e -->* v) = (f -->* v).
+    Proof.
+    intros.
+    Admitted.
+
 
 (** * References and Related Work *)
 
