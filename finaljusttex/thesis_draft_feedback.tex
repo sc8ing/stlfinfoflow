@@ -5,19 +5,19 @@
 \usepackage{coqdoc}
 \usepackage{amsmath,amssymb}
 \usepackage{url}
-\usepackage{bussproofs}
-\usepackage{amssymb}
-\usepackage{latexsym}
-\usepackage{titlesec}
-\usepackage{lipsum}
-\usepackage{setspace}
+\usepackage{bussproofs} \usepackage{amssymb} \usepackage{latexsym} \def\fCenter{{\mbox{\Large$\rightarrow$}}} \usepackage{titlesec} \usepackage{lipsum} \usepackage{setspace}
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This file has been automatically generated with the command
+%% coqdoc Stlc.v --latex --no-index -d ./doc --title Formally Proving Validity for Type-Based Information Flow --table-of-contents --preamble \usepackage{bussproofs} \usepackage{amssymb} \usepackage{latexsym} \def\fCenter{{\mbox{\Large$\rightarrow$}}} \usepackage{titlesec} \usepackage{lipsum} \usepackage{setspace} -g 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\insertnote}[3]{\noindent\textcolor{#1}{\textbf{#2:} #3}}
+\newcommand{\joe}[1]{\insertnote{red}{JDT}{#1}}
+
 
 \titleformat{\chapter}[display]
   {\normalfont\bfseries}{}{0pt}{\Huge}
-
-\def\fCenter{{\mbox{\Large$\rightarrow$}}}
-
-\begin{document}
 
 \begin{titlepage}
 \begin{center}
@@ -27,7 +27,7 @@
 \end{spacing}
 
 \begin{spacing}{2.5}
-    \textbf{\Large Title  I forget}\\[0.5cm]
+    \textbf{\Large A Machine-verified Proof for Information Flow Typing}\\[0.5cm]
     \vspace*{\fill}
 \end{spacing}
 
@@ -39,47 +39,38 @@
 \end{center}
 \end{titlepage}
 
-
-
-
-
 \setcounter{secnumdepth}{2}
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{3}
 \tableofcontents
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% This file has been automatically generated with the command
-%% coqdoc Stlc.v --latex --no-index -d ./doc --title Formally Proving Validity for Type-Based Information Flow --table-of-contents --preamble \usepackage{bussproofs} \usepackage{amssymb} \usepackage{latexsym} \def\fCenter{{\mbox{\Large$\rightarrow$}}} -g 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% \coqlibrary{Stlc}{Library }{Stlc}
 
 \begin{coqdoccode}
 \coqdocemptyline
 \end{coqdoccode}
-\chapter{Abstract}
+
+\section{Abstract}
 
 
 
- Safely securing data is always a priority for systems that work with
- sensitive information. There are numerous ways to protect the
- integrity of data and manage the permissions as to how it can be
- accessed, but most rely on the programmer to correctly implement
- – a task which can become exceedingly difficult to ensure is met
- satisfactorily as a project grows. Information flow analysis
- provides a means to formally guarantee that certain constraints are
- met. By using a type-based approach, these assertions can be
- embedded in a programming language's type system directly, thus
- removing the need for external analysis and providing compile-time
- checking. The various techniques for proving these assertions are
- sound and well documented. The goal of this thesis is to formally
- verify the integrity of one of these proofs using the proof
- management system Coq. 
+ Safely securing data is always a priority for systems that work
+with sensitive information. There are numerous ways to protect the
+integrity of data and manage the permissions as to how it can be
+accessed, but most rely on the programmer to correctly implement
+– a task which can become exceedingly difficult to ensure is met
+satisfactorily as a project grows. Information flow analysis provides
+a means to formally guarantee that certain constraints are met. By
+using a type-based approach, these assertions can be embedded in
+a programming language's type system directly, thus removing the need
+for external analysis and providing compile-time checking. The
+various techniques for proving these assertions are sound and well
+documented. The goal of this thesis is to formally verify the
+integrity of one of these proofs using the proof management system
+Coq. 
 
-\chapter{Background}
+\section{Background}
 
 
 
-\section{Information Flow}
+\subsection{Information Flow}
 
 
 
@@ -88,7 +79,8 @@ regions of the computer's memory. Some of this information may be of
 greater importance, such as in a voting system where it must be
 ensured that the development of publicly-available aggregate data of
 candidate totals cannot be used to recover information about who
-voted. (TODO better example?). In such cases it's not only critical
+voted. (TODO better example?). \joe{The only problem with this example is
+  that it would not work with the strict information flow system considered here, because the aggregate total is derived from individual votes.} In such cases it's not only critical
 to ensure that the program does not accidentally leak sensitive
 information to low-security areas, but also that implicit information
 regarding the structure or content of sensitive data remains solely
@@ -123,10 +115,11 @@ of high-security inputs \coqdocvar{H1}, \coqdocvar{H2} and low-security input \c
 low-security result of executing a program with \coqdocvar{H1} and \coqdocvar{L} as its
 initial states is identical to executing it with \coqdocvar{H2} and \coqdocvar{L} as its
 initial states. This proposition is referred to as
-non-interference. TODO: how to state this property for the way this
+non-interference. \joe{I would say ``property'' not ``proposition''}. TODO: how to state this property for the way this
 language is set up? 
+\joe{I would cite some of the classic papers on information flow in which this definition is introduced.}
 
-\section{The Proof Assistant Coq}
+\subsection{The Proof Assistant Coq}
 
 
 
@@ -136,6 +129,7 @@ language Gallina with advanced implementations of type theory as well
 as a language for constructing machine-checked proofs. Coq is often
 used to prove properties of programs and languages, but is also used
 for intricate mathematical proofs and other related domains.
+\joe{You can include a citation to Coq itself here.}
 
 
 Part of what makes a system like Coq so powerful is the guarantees it
@@ -157,20 +151,22 @@ a machine-checked proof, which is ultimately what this paper is about
 and not merely the results of the proofs themselves, which were
 already believed to probably be true. 
 
-\section{About the Proof}
+\joe{I would say a little bit more about how you generated this document: it is literally derived from the machine checked proofs, so that when \texttt{Lemma} and the like occur below, the reader should understand that these are verbatim statements from Coq that have been checked.}
+
+\subsection{About the Proof}
 
 
 
  The formal proof for type-based information flow presented here
 is largely based off the work of François Pottier and his
 presentation at The National Institute for Research in Computer
-Science and Automation (INRIA). Some modifications have been made for
+Science and Automation (INRIA). \joe{I think the presentation was to the Oregon Programming Languages Summer School. INRIA is Francois's affiliation. I would cite the slides here, as well as the paper we looked at.} Some modifications have been made for
 practical reasons – such as the decision not to use evaluation
 contexts and the inclusion of different types in the language – but
 these are unimportant to the overall goal and the essence of the
 conclusion is the same. 
 
-\chapter{The Language}
+\section{The Language}
 
 
 
@@ -179,11 +175,11 @@ to construct the proof. For the purposes of clarity, it is rather
 bare bones. More involved languages for practical use in the real
 world would nevertheless follow the same fundamental structure,
 simply with more nuances. The critical detail of whatever language is
-used is that it must be typed. (TODO: is this true?). \begin{coqdoccode}
+used is that it must be typed. (TODO: is this true?). \joe{I would simply delete this last sentence.} \begin{coqdoccode}
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\section{Syntax}
+\subsection{Syntax}
 
 
 
@@ -194,9 +190,11 @@ and \coqdocvar{marked}. The latter is the purely-syntactical way for
 a programmer to mark an expression as belonging to one of two
 security classes, either \coqdocvar{High} or \coqdocvar{Low}. Types, security classes,
 and expressions are defined straightforwardly as so: 
+\joe{Could you briefly give some intuition for holes here, as you have done for marked?}
 
 
 
+\joe{There are more types, and they have to include the security typing.}
 
 \begin{itemize}
 \item  DataType ::= \texttt{Bool | Arrow DataType DataType }
@@ -241,11 +239,11 @@ and expressions are defined straightforwardly as so:
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\section{Semantics}
+\subsection{Semantics}
 
 
 
-\subsection{Values}
+\subsubsection{Values}
 
 
 
@@ -283,7 +281,7 @@ take a step.
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\subsection{Substitutions}
+\subsubsection{Substitutions}
 
 
 
@@ -291,14 +289,15 @@ take a step.
 // \coqdocvar{x}] \coqdocvar{e} \coqdockw{is} \coqdocvar{e'} where \coqdocvar{v}, \coqdocvar{e} and \coqdocvar{e'} are expressions and \coqdocvar{x} is
 a variable that may or may not exist in \coqdocvar{e}. The statement can be
 read as ``the result of substituting \coqdocvar{v} for \coqdocvar{x} in \coqdocvar{e} yields
-\coqdocvar{e'}''. The formal rules are detailed below. 
+\coqdocvar{e'}''. \joe{The way coqdoc formats the e' makes it hard to distinguish between the ' and the end of the quotation marks.} The formal rules are detailed below. 
 
- 
 \begin{prooftree}
     \AxiomC{}
     \RightLabel{(s\_var\_eq)}
     \UnaryInfC{[v // x] (var x) is s}
 \end{prooftree}
+
+\joe{shouldn't it be is v, not is s?}
 
 \begin{prooftree}
     \AxiomC{y $\neq$ x}
@@ -357,12 +356,18 @@ read as ``the result of substituting \coqdocvar{v} for \coqdocvar{x} in \coqdocv
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
+\joe{You might make mention of the fact that you will only use this substitution operation when v is a closed expression -- otherwise you would have to worry about capture-avoiding substitution.}
+ 
+
+
 The reduction of expressions in the language is given in
 small-step semantics. All well-typed expressions can either take
 a step or are values. The notation \coqdocvar{e} --> \coqdocvar{e'} is introduced to mean
 that the expression \coqdocvar{e} steps to \coqdocvar{e'} in exactly one step. \coqdocvar{e} -->*
 \coqdocvar{e'} is then used to denote a multi-step relation between \coqdocvar{e} and \coqdocvar{e'}
 or zero or more steps. The stepping rules are as follows: 
+
+\joe{The \texttt{-->} looks kind of ugly in the latex. Is there a way to get Coqdoc to translate this with a unicode symbol (I believe there is).}
 
  
 \begin{prooftree}
@@ -417,9 +422,15 @@ or zero or more steps. The stepping rules are as follows:
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\section{Typing}
 
 
+\joe{I would say something about the Lift rules -- point out that the other rules are pretty standard, but these ones are different because they're needed to make marked work properly.}
+
+
+\subsection{Typing}
+
+
+\joe{We discussed this on Friday, but the types for marked have to incorporate the label. }
 
  The following relation is defined to type an expression and
 guarantee type safety. Any expression not satisfying the requirements
@@ -480,23 +491,24 @@ notation \coqdocvar{Gamma} \ensuremath{\vdash} \coqdocvar{e} \symbol{92}\coqdoct
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\chapter{The Proofs}
+\section{The Proofs}
 
 
 
  The given definitions of the language used here's syntax, typing
 rules, and small-step execution semantics is sufficient to prove the
 soundness of its information flow typing with marked
-expressions. A variety of propositions and lemmas used to construct
+expressions. \joe{The wording of the previous sentence is kind of awkward.} A variety of propositions and lemmas used to construct
 the proof are first introduced, along with two larger theorems that,
 together, form the majority of the proof for non-interference, which
 is the ultimate goal. 
 
-\section{Lemmas and Definitions For Monotonicity}
+\subsection{Lemmas and Definitions For Monotonicity}
+
+\joe{The title of this subsection is confusing because we haven't seen yet what monotonicity is.}
 
 
-
-\subsection{Hole Definitions and the Holier Relation (<<)}
+\subsubsection{Hole Definitions and the Holier Relation (<<)}
 
 
 
@@ -509,6 +521,7 @@ holey`` expression and the relationship between expressions with
     different numbers of holes provide a means of redaction of terms
     that would otherwise violate the safety information flow typing
     seeks to provide.
+    \joe{Quote mark around holey is messed up.}
 
 
 An expression \coqdocvar{e} is holier than an expression \coqdocvar{e'} (written \coqdocvar{e} <<
@@ -523,6 +536,8 @@ expression. Note that the << relation is reflexive as well.
 Also given is the proposition \coqdocvar{noholes} (not shown here). As would be
 expected, an expression \coqdocvar{e} satisfies \coqdocvar{noholes} if it is not a hole
 and none of its sub-expressions are holes. 
+
+\joe{I would say ``We also define a proposition noholes...'' rather than ``Also given...''}
 
  
 \begin{prooftree}
@@ -568,7 +583,7 @@ and none of its sub-expressions are holes.
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\subsection{holyval\_meansval}
+\subsubsection{holyval\_meansval}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -584,13 +599,13 @@ and none of its sub-expressions are holes.
 \end{coqdoccode}
 Since the << relation requires the congruence of both
 arguments' ASTs, any proposition of the form \coqdocvar{v} << \coqdocvar{v'} where \coqdocvar{v} is
-a value entails that \coqdocvar{v'} is also a value. The proof proceeds by
+a value entails that \coqdocvar{v'} is also a value. \joe{I would say ``have the same shape'' rather than ``requires the congruence.} The proof proceeds by
 induction on the \coqdocvar{value} proposition. Most cases follow directly from
 constructors for the \coqdocvar{holier} relation. The inductive hypothesis is
 used for expressions of the form \coqdocvar{marked} \coqdocvar{class} \coqdocvar{body} to show that the
 bodies of both marks must be the same. 
 
-\subsection{holier\_abs\_inv}
+\subsubsection{holier\_abs\_inv}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -619,8 +634,9 @@ for expressions. In the machine proof, \texttt{"; eauto"} is used and
 amounts to saying ''most of the cases follow directly from the
 assumption``, thus removing the need to explicitly iterate through
 them. 
+\joe{This paragraph only makes sense if you give a little bit more detail on Coq and tactics in the background section.}
 
-\subsection{subst\_noholes}
+\subsubsection{subst\_noholes}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -640,7 +656,7 @@ holes to begin with. Note that it's not necessarily true that the
 term substituted in (\coqdocvar{arg}) has no holes, since the substitution
 relation as defined does not require the substitution variable (\coqdocvar{x})
 to exists in \coqdocvar{body} - in other words, a hole could be ''subbed in`` but
-never used.
+never used. \joe{Latex quote marks are reversed here.}
 
 
 The proof proceeds by induction on the substitution relation. The
@@ -650,7 +666,7 @@ therefore the inductive hypothesis applies. More detail is given in
 the proof for \coqdocvar{noholes\_app\_arg\_orunused} to avoid redundancy since
 they proofs are quite similar. 
 
-\subsection{noholes\_app\_arg\_orunused}
+\subsubsection{noholes\_app\_arg\_orunused}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -687,7 +703,7 @@ showing that \coqdocvar{app} \coqdocvar{body} \coqdocvar{arg} = \coqdocvar{app} 
 
 The rest of the cases are similar. 
 
-\subsection{noholes\_holier\_means\_eq}
+\subsubsection{noholes\_holier\_means\_eq}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -703,20 +719,20 @@ The rest of the cases are similar.
 \end{coqdoccode}
 The way relativity is defined for the holier relation means that
 any expression without holes \coqdocvar{e} that's holier than another
-expression \coqdocvar{e'} must be equivalent to \coqdocvar{e'}. The proof proceeds by
+expression \coqdocvar{e'} must be equivalent to \coqdocvar{e'}. \joe{I would delete ``the way relativity is defined'' and just say ``The way the holier relation is defined means that...''} The proof proceeds by
 induction on the assertion that \coqdocvar{e} has no holes. The congruence of
 the << relation then gives the equivalence of \coqdocvar{e} to \coqdocvar{e'} for
 expressions that are values. The inductive hypothesis serves to show
 equivalence for expressions with sub-expressions. 
 
- As an example, the \coqdocvar{e} = \coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2} case is given. From the
+ As an example, the \coqdocvar{e} = \coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2} case is given. \joe{I would say ``consider the ... case'' rather than ``... case is given''} From the
 assumption that \coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2} << \coqdocvar{e'}, we know \coqdocvar{e'} is of the form
 \coqdocvar{test} \coqdocvar{cond'} \coqdocvar{b1'} \coqdocvar{b2'}, \coqdocvar{cond} << \coqdocvar{cond'}, \coqdocvar{b1} << \coqdocvar{b1'}, and \coqdocvar{b2} <<
 \coqdocvar{b2'}. By the inductive hypotheses, all of these sub-expressions must
 therefore be equivalent. Consequently, the \coqdocvar{test} expressions are
 equivalent. The rest of the cases proceed similarly. 
 
-\subsection{bodystepsappsteps}
+\subsubsection{bodystepsappsteps}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -744,7 +760,7 @@ a step. The proof is straightforward induction on the stepping
 relation between the body of the application and the expression is
 steps to. Conditionals in \coqdocvar{test} expressions and bodies of \coqdocvar{marked} ones follow a nearly identical pattern. 
 
-\subsection{condstepsteststeps}
+\subsubsection{condstepsteststeps}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -756,7 +772,7 @@ steps to. Conditionals in \coqdocvar{test} expressions and bodies of \coqdocvar{
 (\coqdocvar{test} \coqdocvar{cond} \coqdocvar{b1} \coqdocvar{b2}) -->* (\coqdocvar{test} \coqdocvar{cond'} \coqdocvar{b1} \coqdocvar{b2}).\coqdoceol
 \coqdocemptyline
 \end{coqdoccode}
-\subsection{markedbodstepstermsteps}
+\subsubsection{markedbodstepstermsteps}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -768,7 +784,7 @@ steps to. Conditionals in \coqdocvar{test} expressions and bodies of \coqdocvar{
 (\coqdocvar{marked} \coqdocvar{class} \coqdocvar{body}) -->* (\coqdocvar{marked} \coqdocvar{class} \coqdocvar{body'}).\coqdoceol
 \coqdocemptyline
 \end{coqdoccode}
-\section{Monotonicity}
+\subsection{Monotonicity}
 
 
 
@@ -777,7 +793,7 @@ monotonicity, which is the property that any time an expression \coqdocvar{e}
 that's holier than an expression \coqdocvar{e'} steps to an expression \coqdocvar{f}
 containing no holes, \coqdocvar{e'} must also eventually step to \coqdocvar{f}. 
 
-\subsection{Single-step Version}
+\subsubsection{Single-step Version}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -924,7 +940,7 @@ possible ways that \coqdocvar{e}, of the form \coqdocvar{app} \coqdocvar{bodye} 
 \end{itemize}
 
 
-\subsection{Full Version}
+\subsubsection{Full Version}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -1000,12 +1016,16 @@ gives as a result that \coqdocvar{f} << \coqdocvar{f'}, the only way this could 
 is if \coqdocvar{f} = \coqdocvar{f'} by \coqdocvar{noholes\_holier\_means\_eq}, which is equivalent to
 the original statement of \coqdocvar{monotonicity}. 
 
+\joe{You could use ``Axiom'' for the lemma that is unproven in your development.}
+
  Unfortunately, the problems related to the weakness of
 \coqdocvar{monotonicity\_single\_step} as originally stated were encountered too
 late in the semester to allow for time to reconstruct the corrected
 proofs in Coq, so this section is missing a corresponding machine-checked proof, which is disappointing. 
 
-\section{Lemmas and Definitions for Stability}
+\joe{I would delete ``which is disappointing''}
+
+\subsection{Lemmas and Definitions for Stability}
 
 
 
@@ -1013,7 +1033,7 @@ proofs in Coq, so this section is missing a corresponding machine-checked proof,
 what's referred to as stability. First, some terminology is
 introduced and several stepping-stone lemmas are proven. 
 
-\subsection{Pruning}
+\subsubsection{Pruning}
 
 
 
@@ -1025,6 +1045,7 @@ replace all marked expressions \coqdocvar{marked} \coqdocvar{class} \coqdocvar{b
 recursively. For ease of reading, the label list is omitted when for
 all cases except the \coqdocvar{P\_marked} ones where it becomes relevant. 
 
+\joe{In coq, didn't you define it as a function? If so, I would actually just give the literal code for implementing it, rather than this formulation as an inductive definition by rules -- I'm not sure the version you've written down here actually prunes multiple labels correctly.}
  
 \newcommand\prune[1]{
     \textbackslash\textbackslash #1//
@@ -1075,7 +1096,7 @@ all cases except the \coqdocvar{P\_marked} ones where it becomes relevant.
 \coqdocemptyline
 \coqdocemptyline
 \end{coqdoccode}
-\subsection{subprunenoorder}
+\subsubsection{subprunenoorder}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -1092,7 +1113,7 @@ all cases except the \coqdocvar{P\_marked} ones where it becomes relevant.
 If the result of a substitution has none of a label, then pruning
 the body for that label beforehand doesn't affect the result. 
 
-\subsection{prunesubst\_commute}
+\subsubsection{prunesubst\_commute}
 
 \begin{coqdoccode}
 \coqdocemptyline
@@ -1107,11 +1128,11 @@ the body for that label beforehand doesn't affect the result.
 Pruning the result of a substitution is the same as pruning the
 argument and body before making the substitution. 
 
-\section{Stability}
+\subsection{Stability}
 
 
 
-\subsection{Single-step Version}
+\subsubsection{Single-step Version}
 
 
 
@@ -1219,7 +1240,7 @@ on the inductive hypothesis and whether \coqdocvar{class} = \coqdocvar{lab} if n
 
 
 
-\subsection{Full Version}
+\subsubsection{Full Version}
 
 
 
@@ -1267,20 +1288,41 @@ Proof for the stability theorem is done here by induction on the
 
 
 
-\section{Non-interference}
+\subsection{Non-interference}
 
- Together, stability and monotonicity (along with the guarantees of the type system) form the majority of the proof for non-interference. To restate the theorem, it's the property that adf TODO: unsure how to state this from the slides
 
-\chapter{References and Related Work}
+
+ Together, stability and monotonicity (along with the guarantees
+of the type system) form the majority of the proof for
+non-interference. To restate the theorem, it's the property that
+TODO: unsure how to state this from the slides 
+
+\section{References and Related Work}
+
+
+
+
+
 
 \begin{itemize}
-\item  The idea for using stability and monotonicity to complete a syntactic proof of non-interference was inspired by François Pottier's 2004 presentation at INRIA. The slides of his presentation can be found at \url{http://gallium.inria.fr/~fpottier/slides/eugene.pdf}.
+\item  The idea for using stability and monotonicity to complete
+  a syntactic proof of non-interference was inspired by François
+  Pottier's 2004 presentation at INRIA. \joe{See remark earlier about this.} The slides of his
+  presentation can be found at
+  http://gallium.inria.fr/\~{}fpottier/slides/eugene.pdf.
 
 
 
 \item  TODO: any other things I should add?
 
+  \joe{The basic literature on information flow, like the other paper you read and some of the sources cited there.}
+
+
 \end{itemize}
 
 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
 \end{document}

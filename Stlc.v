@@ -1574,8 +1574,25 @@ non-interference. To restate the theorem, it's the property that, for
 any two well-typed expressions [e] and [f] where [\\e// = \\f//], [e
 -->* v] is equivalent to [f -->* v] for some value [v]. *)
 
+(* the argument is decomposed into two parts. theres a type system
+ * and a classic proof of progress ad presevervation, also stability and monotonicity proof. in this thesis we are just trying to do the latter version *)
+
+
+(* just write down in words, no need to coq it up *)
+(* send to tassoroti *)
+(* make slides/video after writing this down *)
+   (* send slides/what plan to say to him offered feedback too *)
+(* revisions not a hard date, next few weeks fine for posting on
+ * website, writing after noninterference good enough for grade, then do stuff (hopefully fun) to patch up together for immortal posting *)
+(* erase the complement of the set [e]_{down}L *)
+(* add security typing rules for expressions *)
+(* admit the rules, also for type safety *)
+(* e : bool Low and e -->* v so \\e//_(High::nil) -->* v *)
+
+
     Lemma non_interference' : forall Gamma e T v lab,
         Gamma |- e \in T ->
+        secclass e is lab ->
         e -->* v ->
         \\e//_(lab::nil) -->* v.
     Proof.
