@@ -1308,7 +1308,6 @@ all cases except the [P_marked] ones where it becomes relevant. *)
 \end{prooftree}
 *)
 
-(* begin hide *)
   Fixpoint prune_single (l : sec_class) (e : exp) : exp :=
     match e with
     | app func arg =>
@@ -1332,7 +1331,6 @@ all cases except the [P_marked] ones where it becomes relevant. *)
 
   Definition prune (allowed : list sec_class) (e : exp) : exp :=
     List.fold_left (fun e' lab => prune_single lab e') allowed e.
-(* end hide *)
 
 (* begin hide *)
   Notation "\\ e //_ labs" := (prune labs e) (at level 40).
