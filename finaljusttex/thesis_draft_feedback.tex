@@ -240,25 +240,6 @@ use $\leq$ for the relation and define $Low\leq High$ and $\leq$ is
 reflexive.
 
 
-\joe{There are more types, and they have to include the security typing.}
-
-\jacob{What types are you referring to? These are all there are in
-the Coq file. We never did security typing for the language once
-command statements were removed.}
-
-\joe{Sorry, you're right, there's only Bool and Arrow. But what
-I meant is that, *if* you were to mechanize the type safety part of
-Francois's proof, then he has security class labels on his types.
-Concretely, if you look at slide 40, he has 4 types: unit, arrow,
-product, and sum with a superscript label. You don't have sum types,
-but you do have bool, which is equivalent to (unit + unit), so your
-bool should have superscript labels too. On the next slide, he
-defines this triangle predicate $l \triangleleft t$. The key rule for
-you would be that is that $l \triangleleft \textsf{bool}^{l'}$ if $l
-\leq l'$, which plays a role in the next question. Now, the
-mechanization of this part was not done, but you can still (to keep
-the thesis self-contained) describe these rules.}
-
 \begin{itemize}
     \item  DataType ::= $\texttt{Bool}^{SecClass}$ \texttt{| Arrow DataType DataType }
 
@@ -455,7 +436,7 @@ limitations of Coq's syntactical restraints, the notation
 \coqdocvar{Gamma} \ensuremath{\vdash} \coqdocvar{e}
 \symbol{92}\coqdoctac{in} \coqdocvar{T} is used to signify that
 expression \coqdocvar{e} is has type \coqdocvar{T} under a typing
-context \coqdocvar{Gamma}. The notation $l \triangleleft Bool^{l'}$ is a proposition that's true if $l \leq l'$.
+context \coqdocvar{Gamma}. The notation $l \triangleleft Bool^{l'}$ is a proposition that's true if $l \leq l'$ for security classes $l$ and $l'$.
  
 \begin{prooftree}
     \AxiomC{$\Gamma(x) =$ T}
@@ -1485,41 +1466,37 @@ have that    \coqdocvar{e} $\to$ \coqdocvar{m},
 
 The argument for non-interferenced can be decomposed into two parts.
 First, there's a type system and classic proof of progress and
-preservation. Second is a proof assuming these things and using
-monotonicity and stability.  In this thesis we are focusing on the
-latter version. \joe{latter part, not version.} For the language given, this formulation of
-non-interference is the property that, for any two well-typed
-expressions $e$ and $f$ where $\prune{e} = \prune{f}$, $e \to_* v$ is
-equivalent to $f \to_* v$ for some value $v$. Assuming type
-preservation holds, $v$ must be of the same type as $e$ and $f$ and
-carry all of their labels, each of which must be of a lower security
-class than the original label.  Consequently, the erasure of the
-complement of the original label present for $v$ is $v$. Applying....
+preservation. Second is an equivalent (symmetric) reformulation
+sometimes seen. In this thesis we are focusing on the latter part,
+but provide the first part for completeness, which is stated as the
+property that when any well-typed expression $e$ of type Bool with
+security label $l$ steps to some \coqdocvar{value} $v$, the prune of
+all labels above $l$ from $e$ still steps to $v$.
 
-\jacob{If we are focusing on the second formulation, doesn't it rely
-on the first according to slide 56? If so, why are we doing this
-formulation, if the proof for it requires proving an equivalent
-statement of non-interference that doesn't even need monotonicity?
-Can you help me more on understanding how this comes together? What
-does it mean for $e_1\to_* v$ to be equivalent to $e_2\to_* v$ and
-where does monotonicity come in?}
+Assuming type preservation, $v$ must be of the same type as $e$ and
+$f$ and carry all of their labels, each of which must be of a lower
+security class than the original label as per the typing rules (see
+\coqdocvar{T\_marked}). Consequently, pruning $v$ as specified is
+$v$. Overall, we now have \coqdocvar{noholes} $v$, $\prune{v}$ = $v$,
+and $e\to_* v$ – the three premises needed to apply stability, so we
+get that $\prune{e}\to_* v$ as desired.
 
-\joe{Both versions still require monotonicity because we use monotonicity in the proof of stability. I think Francois states the two versions because the second one on slide 56 is closer to the version you see described in other papers on non-interference (which relate two separate executions of programs in different configurations. But his proof technique establishes the first version, and then from that he derives the second version.
-  I would go ahead and just state both versions and follow the same pattern of explaining the first version and then explain how the second version is derived from the first.
-}
+The symmetric formulation of non-interference is states that, for any
+two well-typed expressions $e_1$ and $e_2$ with security label $l$
+where $\prune{e_1} = \prune{e_2}$, $e_1 \to_* v$ iff $e_2 \to_* v$
+for some \coqdocvar{value} $v$. 
 
-  \joe{
-  Francois spells out more detail for the proof of the first version, so hopefully that argument is a little bit clearer. So let me spell out some more about the second version.
-  What he means by ``$e_1\to_* v$ to be equivalent to $e_2\to_* v$'' is that for all values $v$, it should be the case that $e_1$ reduces to v if and only if $e_2$ also reduces to $v$. (So ``equivalent'' just means ``if and only if'' in this context).
-}
+First assume $e_1\to_* v$. We need to show $e_2\to_* v$. Note that,
+by symmetry, the same arguments apply in the other direction to prove
+$(e_2\to_* v) \to (e_1\to_* v)$. By the version of non-interference
+given above, we know that $\prune{e_1}\to_* v$. Since $\prune{e_1}
+= \prune{e_2}$ by assumption, $\prune{e_2}$ also steps to $v$. We now
+have \coqdocvar{noholes} $v$, $\prune{e_1}\to_* v$, and $\prune{e_1}
+<< \prune{e_2}$ (reflexivity of \coqdocvar{holier}) – the three
+conditions needed to apply monotonicity and get that
+$\prune{e_2}\to_* v$.
 
-\joe{  So, first, assume $e_1$ reduces to $v$. Then, by the first version of non-interference,the pruning of $e_1$ also reduces to $v$. By assumption, we know that pruning of $e_1$ and the pruning of $e_2$ are the same. Thus, the pruning of $e_2$ must reduce to $v$. Now, (1) the pruning of $e_2$ is of course holier than $e_2$, and (2) $v$ is a value of type bool, so it has no holes. Hence, monotonicity implies that $e_2$ must reduce to $v$ as well.
-  By symmetry, the same argument shows that if $e_2$ reduces to $v$, then $e_1$ must reduce to $v$. Hence, $e_1$ reduces to $v$ if and only if $e_2$ does.
-}
-
-
-
-%\bibliography{bibdb}{}
+\bibliography{bibdb}{}
 
 \bibliographystyle{plain}
 
